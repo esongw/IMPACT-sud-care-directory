@@ -3036,10 +3036,8 @@
                         }
                         </td>
                     </tr>
-                    <tr class="facility-details-row" id="${facilityId}">
-                        <td colspan="7" class="facility-details-cell">
-                            ${createFacilityDetails(facility)}
-                        </td>
+                    <tr class="facility-details-row" id="${facilityId}" data-facility-id="${facility.id}">
+                        <td colspan="7" class="facility-details-cell"></td>
                     </tr>
                 `;
                 });
@@ -3050,19 +3048,6 @@
             `;
 
                 listContainer.innerHTML = html;
-
-                // Attach event listeners to notes textareas
-                facilities.forEach((facility) => {
-                    const textarea = document.getElementById(
-                        `notes-${facility.id}`,
-                    );
-                    if (textarea) {
-                        textarea.addEventListener("input", (e) => {
-                            updateNote(facility.id, e.target.value);
-                            updateTimestamp(facility.id);
-                        });
-                    }
-                });
             }
 
             // Toggle facility details
@@ -3076,6 +3061,22 @@
                     icon.classList.remove("expanded");
                     parentRow.classList.remove("expanded");
                 } else {
+                    const cell = detailsRow.querySelector(".facility-details-cell");
+                    if (!cell.dataset.loaded) {
+                        const fid = detailsRow.dataset.facilityId;
+                        const facility = allFacilities.find(f => String(f.id) === String(fid));
+                        if (facility) {
+                            cell.innerHTML = createFacilityDetails(facility);
+                            cell.dataset.loaded = "true";
+                            const textarea = cell.querySelector(`#notes-${facility.id}`);
+                            if (textarea) {
+                                textarea.addEventListener("input", (e) => {
+                                    updateNote(facility.id, e.target.value);
+                                    updateTimestamp(facility.id);
+                                });
+                            }
+                        }
+                    }
                     detailsRow.classList.add("show");
                     icon.classList.add("expanded");
                     parentRow.classList.add("expanded");
