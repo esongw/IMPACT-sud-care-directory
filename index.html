@@ -3409,7 +3409,7 @@
             // Import/Export Functions
             function showImportModal() {
                 const password = prompt("Enter admin password:");
-                if (password === "impact_admin") {
+                if (password === "__ADMIN_PASSWORD__") {
                     document
                         .getElementById("importModal")
                         .classList.add("show");
@@ -3740,7 +3740,7 @@
             // Add Facility Modal Functions
             function showAddFacilityModal() {
                 const password = prompt("Enter admin password:");
-                if (password === "impact_admin") {
+                if (password === "__ADMIN_PASSWORD__") {
                     // Populate options from all facilities data
                     const allOptions = extractAllOptions();
 
@@ -3996,7 +3996,7 @@
             };
 
             // Login / logout
-            const PASSWORD = "sudcareworks!";
+            const PASSWORD = "__LOGIN_PASSWORD__";
 
             function submitLogin() {
                 const input = document.getElementById("login-password").value;
