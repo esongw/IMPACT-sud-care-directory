@@ -1724,6 +1724,19 @@
                         </div>
                     </div>
 
+                    <!-- Hours Section -->
+                    <div style="margin-bottom: 25px">
+                        <h4 style="color: #4a7ba7; margin-bottom: 10px">
+                            🕐 Hours of Operation
+                        </h4>
+                        <textarea
+                            id="editFacilityHours"
+                            class="search-box"
+                            style="min-height: 60px; width: 100%"
+                            placeholder="e.g. Mon–Fri: 8am–5pm, Sat: 9am–1pm"
+                        ></textarea>
+                    </div>
+
                     <!-- Special Programs Section -->
                     <div style="margin-bottom: 25px">
                         <h4 style="color: #4a7ba7; margin-bottom: 10px">
@@ -2110,6 +2123,10 @@
                 document.getElementById("editFacilitySpecialPrograms").value =
                     currentSpecialPrograms.join("\n");
 
+                // Populate hours
+                document.getElementById("editFacilityHours").value =
+                    customData?.hours || '';
+
                 // Populate contacts
                 renderEditContacts(contacts);
 
@@ -2207,6 +2224,9 @@
                 const newSpecialPrograms = newSpecialProgramsText
                     ? newSpecialProgramsText.split("\n").filter((p) => p.trim())
                     : [];
+                const newHours = document
+                    .getElementById("editFacilityHours")
+                    .value.trim();
 
                 // Collect contacts
                 const container = document.getElementById("editContactsList");
@@ -2250,6 +2270,7 @@
                     facility.services?.special_programs ||
                     [];
                 const currentContacts = customData?.contacts || [];
+                const currentHours = customData?.hours || '';
 
                 // Build changes summary
                 const changes = [];
@@ -2371,6 +2392,15 @@
                     });
                 }
 
+                // Check hours
+                if (newHours !== currentHours) {
+                    if (newHours) {
+                        changes.push({ type: "add", category: "Hours", items: [newHours] });
+                    } else {
+                        changes.push({ type: "remove", category: "Hours", items: ["Hours removed"] });
+                    }
+                }
+
                 if (changes.length === 0) {
                     alert("No changes detected.");
                     return;
@@ -2383,6 +2413,7 @@
                     payment_options: newPaymentOptions,
                     special_programs: newSpecialPrograms,
                     contacts: newContacts,
+                    hours: newHours,
                 };
 
                 // Display changes
@@ -2469,6 +2500,7 @@
                         pendingFacilityEdits.payment_options;
                     facility.services.special_programs =
                         pendingFacilityEdits.special_programs;
+                    facility.hours = pendingFacilityEdits.hours;
                 }
 
                 // Close modals and refresh display
@@ -2961,6 +2993,7 @@
                             <th>Street Address</th>
                             <th onclick="sortFacilities('city')" style="cursor: pointer;">City <span id="sort-city">↕</span></th>
                             <th>State</th>
+                            <th>Hours</th>
                             <th>Website</th>
                         </tr>
                     </thead>
@@ -2983,6 +3016,7 @@
                         <td>${facility.address.street1 || "N/A"}</td>
                         <td>${facility.address.city}</td>
                         <td>${facility.address.state}</td>
+                        <td style="white-space: pre-line; font-size: 13px;">${getFacilityCustomData(facility.id)?.hours || facility.hours || ''}</td>
                         <td>${
                             facility.contact.website &&
                             facility.contact.website !== "https://" &&
@@ -2993,7 +3027,7 @@
                         </td>
                     </tr>
                     <tr class="facility-details-row" id="${facilityId}" data-facility-id="${facility.id}">
-                        <td colspan="7" class="facility-details-cell"></td>
+                        <td colspan="8" class="facility-details-cell"></td>
                     </tr>
                 `;
                 });
@@ -3049,6 +3083,7 @@
 
                 const note = getNote(facility.id);
                 const documents = getFacilityDocuments(facility.id);
+                const hours = getFacilityCustomData(facility.id)?.hours || facility.hours || '';
 
                 return `
                 <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 30px;">
@@ -3066,6 +3101,11 @@
                             ${facility.address.street2 ? `<p style="margin: 5px 0;">${facility.address.street2}</p>` : ""}
                             <p style="margin: 5px 0;">${facility.address.city}, ${facility.address.state} ${facility.address.zip}</p>
                         </div>
+
+                        ${hours ? `<div style="margin-bottom: 20px;">
+                            <h4 style="color: #4a7ba7; margin-bottom: 10px; font-size: 16px;">🕐 Hours of Operation</h4>
+                            <p style="margin: 5px 0; white-space: pre-line;">${hours}</p>
+                        </div>` : ""}
 
                         ${
                             facility.contact.website &&
