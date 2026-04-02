@@ -888,6 +888,7 @@
                 background: #4a7ba7;
                 color: #ffffff;
             }
+            .admin-hidden { display: none !important; }
         </style>
     </head>
     <body>
@@ -1229,7 +1230,7 @@
                         box-shadow: 0 2px 8px rgba(91, 143, 196, 0.2);
                     "
                 >
-                    <div class="admin-only" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; padding-bottom: 14px; border-bottom: 1px solid #b8d4e8;">
+                    <div class="admin-only admin-hidden" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; padding-bottom: 14px; border-bottom: 1px solid #b8d4e8;">
                         <p style="font-size: 15px; color: #2d5170; margin: 0; font-weight: 600;">Is there a SUD care facility that needs to be added to this directory?</p>
                         <button class="btn btn-primary" onclick="showAddFacilityModal()" style="font-size: 14px; padding: 8px 18px; white-space: nowrap; margin-left: 16px;">
                             ➕ Add Facility
@@ -1244,7 +1245,7 @@
                 </div>
             </div>
 
-            <div class="notes-management admin-only">
+            <div class="notes-management admin-only admin-hidden">
                 <span class="notes-management-title">📋 Notes Management:</span>
                 <button class="btn btn-primary" onclick="showImportModal()">
                     📥 Import Notes
@@ -4188,9 +4189,8 @@
             }
 
             function applyAccessLevel() {
-                const show = isAdmin();
                 document.querySelectorAll(".admin-only").forEach(el => {
-                    el.style.display = show ? "" : "none";
+                    el.classList.toggle("admin-hidden", !isAdmin());
                 });
             }
 
