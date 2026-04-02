@@ -1675,7 +1675,7 @@
 
         <script>
             // Supabase client
-            const _supabase = window.supabase.createClient('__SUPABASE_URL__', '__SUPABASE_ANON_KEY__');
+            const _supabase = window.supabase?.createClient('__SUPABASE_URL__', '__SUPABASE_ANON_KEY__') ?? null;
 
             // Debounce helper for note saves
             const _debounceTimers = {};
