@@ -1241,7 +1241,7 @@
                         Is there a SUD care facility that needs to be added to
                         this directory?
                     </p>
-                    <div style="display: flex; justify-content: center">
+                    <div style="display: flex; justify-content: center" class="admin-only">
                         <button
                             class="btn btn-primary"
                             onclick="showAddFacilityModal()"
@@ -1253,7 +1253,7 @@
                 </div>
             </div>
 
-            <div class="notes-management">
+            <div class="notes-management admin-only">
                 <span class="notes-management-title">📋 Notes Management:</span>
                 <button class="btn btn-primary" onclick="showImportModal()">
                     📥 Import Notes
@@ -3091,7 +3091,7 @@
                     <div>
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                             <h3 style="margin: 0; color: #2d2520;">${facility.name}</h3>
-                            <button class="btn btn-secondary" style="padding: 6px 14px; font-size: 13px;" onclick="event.stopPropagation(); showEditFacilityModal('${facility.id}')">✏️ Edit</button>
+                            ${isAdmin() ? `<button class="btn btn-secondary" style="padding: 6px 14px; font-size: 13px;" onclick="event.stopPropagation(); showEditFacilityModal('${facility.id}')">✏️ Edit</button>` : ""}
                         </div>
                         ${facility.name_secondary ? `<p style="color: #6b5f54; font-style: italic; margin-bottom: 15px;">${facility.name_secondary}</p>` : ""}
 
@@ -3129,7 +3129,8 @@
                                 id="notes-${facility.id}"
                                 class="notes-textarea"
                                 style="min-height: 200px;"
-                                placeholder="Add your notes about this facility..."
+                                placeholder="${isAdmin() ? "Add your notes about this facility..." : "Notes are read-only."}"
+                                ${isAdmin() ? "" : "readonly"}
                             >${note.text}</textarea>
                             <div id="timestamp-${facility.id}" class="notes-timestamp">
                                 ${note.timestamp ? `Last updated: ${new Date(note.timestamp).toLocaleString()}` : ""}
@@ -3148,7 +3149,7 @@
                                             <span style="font-size: 14px; flex: 1;">${doc.name}</span>
                                             <div style="display: flex; gap: 5px;">
                                                 <button class="btn btn-secondary" style="padding: 4px 12px; font-size: 12px;" onclick="event.stopPropagation(); downloadDocument('${facility.id}', '${doc.name.replace(/'/g, "\\'")}')">⬇ Download</button>
-                                                <button class="btn btn-secondary" style="padding: 4px 12px; font-size: 12px; background: #a94842;" onclick="event.stopPropagation(); deleteDocument('${facility.id}', '${doc.name.replace(/'/g, "\\'")}')">🗑 Delete</button>
+                                                ${isAdmin() ? `<button class="btn btn-secondary" style="padding: 4px 12px; font-size: 12px; background: #a94842;" onclick="event.stopPropagation(); deleteDocument('${facility.id}', '${doc.name.replace(/'/g, "\\'")}')">🗑 Delete</button>` : ""}
                                             </div>
                                         </div>
                                     `,
@@ -3157,10 +3158,12 @@
                                         : '<p style="font-size: 14px; color: #6b5f54; font-style: italic;">No documents uploaded yet.</p>'
                                 }
                             </div>
+                            ${isAdmin() ? `
                             <label for="upload-doc-${facility.id}" class="btn btn-primary" style="display: inline-block; cursor: pointer; padding: 8px 16px; font-size: 14px;">
                                 📤 Upload Document
                             </label>
                             <input type="file" id="upload-doc-${facility.id}" style="display: none;" onchange="handleDocumentUpload(event, '${facility.id}')">
+                            ` : ""}
                         </div>
                     </div>
 
@@ -3996,14 +3999,35 @@
 
             // Login / logout
             const PASSWORD = "__LOGIN_PASSWORD__";
+            const ADMIN_PASSWORD = "__ADMIN_PASSWORD__";
+
+            function isAdmin() {
+                return sessionStorage.getItem("accessLevel") === "admin";
+            }
+
+            function applyAccessLevel() {
+                const show = isAdmin();
+                document.querySelectorAll(".admin-only").forEach(el => {
+                    el.style.display = show ? "" : "none";
+                });
+            }
 
             function submitLogin() {
                 const input = document.getElementById("login-password").value;
-                if (input === PASSWORD) {
+                if (input === ADMIN_PASSWORD) {
                     sessionStorage.setItem("authenticated", "true");
+                    sessionStorage.setItem("accessLevel", "admin");
                     document.getElementById("login-overlay").classList.add("hidden");
                     document.getElementById("login-password").value = "";
                     document.getElementById("login-error").textContent = "";
+                    applyAccessLevel();
+                } else if (input === PASSWORD) {
+                    sessionStorage.setItem("authenticated", "true");
+                    sessionStorage.setItem("accessLevel", "readonly");
+                    document.getElementById("login-overlay").classList.add("hidden");
+                    document.getElementById("login-password").value = "";
+                    document.getElementById("login-error").textContent = "";
+                    applyAccessLevel();
                 } else {
                     document.getElementById("login-error").textContent =
                         "Incorrect password. Please try again.";
@@ -4014,6 +4038,7 @@
 
             function logout() {
                 sessionStorage.removeItem("authenticated");
+                sessionStorage.removeItem("accessLevel");
                 document.getElementById("login-overlay").classList.remove("hidden");
                 document.getElementById("login-password").focus();
             }
@@ -4021,6 +4046,7 @@
             // Check auth on load
             if (sessionStorage.getItem("authenticated") === "true") {
                 document.getElementById("login-overlay").classList.add("hidden");
+                applyAccessLevel();
             } else {
                 document.getElementById("login-password").focus();
             }
