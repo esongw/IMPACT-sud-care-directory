@@ -1253,6 +1253,12 @@
                 </div>
             </div>
 
+            <div style="display: flex; justify-content: center; margin-bottom: 12px;">
+                <button class="btn btn-secondary" onclick="showGenerateListModal()" style="font-size: 14px; padding: 10px 22px;">
+                    📋 Generate Facility List
+                </button>
+            </div>
+
             <div class="notes-management admin-only">
                 <span class="notes-management-title">📋 Notes Management:</span>
                 <button class="btn btn-primary" onclick="showImportModal()">
@@ -1281,6 +1287,47 @@
                 <div class="loading">
                     <h3>Loading facilities...</h3>
                     <p>Please wait while we fetch the data</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Generate List Modal -->
+        <div id="generateListModal" class="modal">
+            <div class="modal-content" style="max-width: 820px; max-height: 90vh; overflow-y: auto;">
+                <div class="modal-header">📋 Generate Facility List</div>
+                <div class="modal-body">
+
+                    <!-- Field selection -->
+                    <div style="margin-bottom: 20px;">
+                        <h4 style="color: #4a7ba7; margin-bottom: 12px;">Fields to Include</h4>
+                        <div id="generateFieldCheckboxes" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;"></div>
+                    </div>
+
+                    <!-- Facility selection -->
+                    <div style="margin-bottom: 20px;">
+                        <h4 style="color: #4a7ba7; margin-bottom: 10px;">Select Facilities</h4>
+                        <div style="display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; align-items: center;">
+                            <input type="text" id="generateFacilitySearch" class="search-box" style="flex: 1; min-width: 180px; padding: 6px 10px; font-size: 13px;" placeholder="Search facilities..." oninput="filterGenerateList()">
+                            <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 13px;" onclick="setAllGenerateFacilities(true)">Select All</button>
+                            <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 13px;" onclick="setAllGenerateFacilities(false)">Deselect All</button>
+                            <span id="generateSelectedCount" style="font-size: 13px; color: #6b5f54;"></span>
+                        </div>
+                        <div id="generateFacilityList" style="max-height: 260px; overflow-y: auto; border: 1px solid #d4c9bc; border-radius: 4px; padding: 8px;" onclick="updateGenerateSelectedCount()"></div>
+                    </div>
+
+                    <!-- Output -->
+                    <div id="generateOutputSection" style="display: none;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <h4 style="color: #4a7ba7; margin: 0;">Generated List</h4>
+                            <button class="btn btn-primary" style="padding: 6px 14px; font-size: 13px;" onclick="copyGeneratedList()">📋 Copy to Clipboard</button>
+                        </div>
+                        <textarea id="generatedListText" class="notes-textarea" style="min-height: 300px; width: 100%; box-sizing: border-box;" readonly></textarea>
+                    </div>
+
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="closeGenerateListModal()">Close</button>
+                    <button class="btn btn-primary" onclick="generateList()">Generate List</button>
                 </div>
             </div>
         </div>
@@ -3996,6 +4043,156 @@
                     closeImportModal();
                 }
             };
+
+            // Generate List Functions
+            const GENERATE_FIELDS = [
+                { id: 'name',             label: 'Name',               checked: true  },
+                { id: 'name_secondary',   label: 'Secondary Name',     checked: false },
+                { id: 'facility_type',    label: 'Facility Type',      checked: false },
+                { id: 'county',           label: 'County',             checked: true  },
+                { id: 'address',          label: 'Address',            checked: true  },
+                { id: 'phone',            label: 'Phone / Contact',    checked: true  },
+                { id: 'website',          label: 'Website',            checked: true  },
+                { id: 'hours',            label: 'Hours',              checked: false },
+                { id: 'medications',      label: 'Pharmacotherapies',  checked: false },
+                { id: 'service_settings', label: 'Service Settings',   checked: false },
+                { id: 'payment_options',  label: 'Payment Options',    checked: false },
+                { id: 'special_programs', label: 'Special Programs',   checked: false },
+            ];
+
+            function showGenerateListModal() {
+                // Render field checkboxes
+                document.getElementById('generateFieldCheckboxes').innerHTML = GENERATE_FIELDS.map(f => `
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="gen-field-${f.id}" ${f.checked ? 'checked' : ''}>
+                        <span>${f.label}</span>
+                    </label>
+                `).join('');
+
+                // Render facility checkboxes from current filtered list
+                renderGenerateFacilityList(filteredFacilities);
+
+                document.getElementById('generateFacilitySearch').value = '';
+                document.getElementById('generateOutputSection').style.display = 'none';
+                document.getElementById('generateListModal').classList.add('show');
+            }
+
+            function renderGenerateFacilityList(facilities) {
+                document.getElementById('generateFacilityList').innerHTML = facilities.map(f => `
+                    <label class="checkbox-label" style="display: flex; padding: 4px 0; border-bottom: 1px solid #f0ebe3;">
+                        <input type="checkbox" class="gen-facility-cb" value="${f.id}" checked style="margin-right: 8px;">
+                        <span style="font-size: 13px;">${f.name}${f.name_secondary ? ` <em style="color:#6b5f54;">(${f.name_secondary})</em>` : ''}</span>
+                    </label>
+                `).join('');
+                updateGenerateSelectedCount();
+            }
+
+            function filterGenerateList() {
+                const term = document.getElementById('generateFacilitySearch').value.toLowerCase();
+                const filtered = filteredFacilities.filter(f =>
+                    f.name.toLowerCase().includes(term) ||
+                    (f.name_secondary || '').toLowerCase().includes(term)
+                );
+                renderGenerateFacilityList(filtered);
+            }
+
+            function setAllGenerateFacilities(checked) {
+                document.querySelectorAll('.gen-facility-cb').forEach(cb => cb.checked = checked);
+                updateGenerateSelectedCount();
+            }
+
+            function updateGenerateSelectedCount() {
+                const total = document.querySelectorAll('.gen-facility-cb').length;
+                const selected = document.querySelectorAll('.gen-facility-cb:checked').length;
+                document.getElementById('generateSelectedCount').textContent = `${selected} of ${total} selected`;
+            }
+
+            function generateList() {
+                const typeLabels = { SA: 'Substance Abuse', MH: 'Mental Health', BOTH: 'Both SA & MH' };
+
+                // Which fields are checked
+                const fields = {};
+                GENERATE_FIELDS.forEach(f => {
+                    fields[f.id] = document.getElementById(`gen-field-${f.id}`)?.checked || false;
+                });
+
+                // Which facilities are checked
+                const selectedIds = new Set(
+                    Array.from(document.querySelectorAll('.gen-facility-cb:checked')).map(cb => String(cb.value))
+                );
+                const selected = filteredFacilities.filter(f => selectedIds.has(String(f.id)));
+
+                if (selected.length === 0) {
+                    alert('Please select at least one facility.');
+                    return;
+                }
+
+                const lines = selected.map((f, i) => {
+                    const customData = getFacilityCustomData(f.id);
+                    const parts = [];
+
+                    if (fields.name) parts.push(f.name);
+                    if (fields.name_secondary && f.name_secondary) parts.push(`  Also known as: ${f.name_secondary}`);
+                    if (fields.facility_type && f.facility_type) parts.push(`  Type: ${typeLabels[f.facility_type] || f.facility_type}`);
+                    if (fields.county && f.county) parts.push(`  County: ${f.county}`);
+                    if (fields.address && f.address) {
+                        const a = f.address;
+                        const line2 = a.street2 ? `\n           ${a.street2}` : '';
+                        parts.push(`  Address: ${a.street1}${line2}\n           ${a.city}, ${a.state} ${a.zip}`);
+                    }
+                    if (fields.phone) {
+                        const contacts = customData?.contacts || [];
+                        const defaultContacts = [];
+                        if (!customData?.contacts) {
+                            if (f.contact?.phone) defaultContacts.push(`Phone: ${f.contact.phone}`);
+                            if (f.contact?.intake_phone) defaultContacts.push(`Intake: ${f.contact.intake_phone}`);
+                            if (f.contact?.hotline) defaultContacts.push(`Hotline: ${f.contact.hotline}`);
+                        }
+                        const contactLines = customData?.contacts
+                            ? contacts.map(c => `${c.type}: ${c.info}${c.notes ? ` (${c.notes})` : ''}`)
+                            : defaultContacts;
+                        contactLines.forEach(c => parts.push(`  ${c}`));
+                    }
+                    if (fields.website && f.contact?.website && f.contact.website !== 'https://' && f.contact.website !== 'http://') {
+                        parts.push(`  Website: ${f.contact.website}`);
+                    }
+                    const hours = customData?.hours || f.hours || '';
+                    if (fields.hours && hours) parts.push(`  Hours: ${hours}`);
+
+                    const meds = customData?.medications || f.services?.medications || [];
+                    if (fields.medications && meds.length) parts.push(`  Pharmacotherapies: ${meds.join(', ')}`);
+
+                    const settings = customData?.service_settings || f.services?.service_settings || [];
+                    if (fields.service_settings && settings.length) parts.push(`  Service Settings: ${settings.join(', ')}`);
+
+                    const payments = customData?.payment_options || f.services?.payment_options || [];
+                    if (fields.payment_options && payments.length) parts.push(`  Payment Options: ${payments.join(', ')}`);
+
+                    const programs = customData?.special_programs || f.services?.special_programs || [];
+                    if (fields.special_programs && programs.length) parts.push(`  Special Programs: ${programs.join(', ')}`);
+
+                    return `${i + 1}. ${parts.join('\n')}`;
+                });
+
+                document.getElementById('generatedListText').value = lines.join('\n\n');
+                document.getElementById('generateOutputSection').style.display = '';
+                document.getElementById('generatedListText').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+
+            function copyGeneratedList() {
+                const textarea = document.getElementById('generatedListText');
+                textarea.select();
+                navigator.clipboard.writeText(textarea.value).then(() => {
+                    const btn = event.target;
+                    const original = btn.textContent;
+                    btn.textContent = '✓ Copied!';
+                    setTimeout(() => btn.textContent = original, 2000);
+                });
+            }
+
+            function closeGenerateListModal() {
+                document.getElementById('generateListModal').classList.remove('show');
+            }
 
             // Login / logout
             const PASSWORD = "__LOGIN_PASSWORD__";
