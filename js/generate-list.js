@@ -60,19 +60,21 @@ function showGenerateListModal() {
 
 function renderGenerateFacilityList(facilities) {
     _genCurrentFacilities = facilities;
-    document.getElementById('generateFacilityList').innerHTML = facilities.map(f => `
-        <label class="checkbox-label" style="display: flex; padding: 4px 0; border-bottom: 1px solid #f0ebe3;">
-            <input type="checkbox" class="gen-facility-cb" value="${f.id}" ${_genSelectedIds.has(String(f.id)) ? 'checked' : ''} style="margin-right: 8px;" onchange="_genSyncCheckbox(this)">
-            <span style="font-size: 13px;">${f.name}${f.name_secondary ? ` <em style="color:#6b5f54;">(${f.name_secondary})</em>` : ''}</span>
-        </label>
-    `).join('');
-    updateGenerateSelectedCount();
+    document.getElementById('generateFacilityList').innerHTML = facilities.length === 0
+        ? '<p style="font-size: 13px; color: #6b5f54; font-style: italic; padding: 4px 0;">No facilities match the current filters.</p>'
+        : facilities.map(f => `
+            <label class="checkbox-label" style="display: flex; padding: 4px 0; border-bottom: 1px solid #f0ebe3;">
+                <input type="checkbox" class="gen-facility-cb" value="${f.id}" ${_genSelectedIds.has(String(f.id)) ? 'checked' : ''} style="margin-right: 8px;" onchange="_genSyncCheckbox(this)">
+                <span style="font-size: 13px;">${f.name}${f.name_secondary ? ` <em style="color:#6b5f54;">(${f.name_secondary})</em>` : ''}</span>
+            </label>
+        `).join('');
+    _renderGenSelectedPanel();
 }
 
 function _genSyncCheckbox(cb) {
     if (cb.checked) _genSelectedIds.add(String(cb.value));
     else _genSelectedIds.delete(String(cb.value));
-    updateGenerateSelectedCount();
+    _renderGenSelectedPanel();
 }
 
 // Apply modal-local filters and re-render the facility list
@@ -266,13 +268,37 @@ function setAllGenerateFacilities(checked) {
         if (checked) _genSelectedIds.add(String(cb.value));
         else _genSelectedIds.delete(String(cb.value));
     });
-    updateGenerateSelectedCount();
+    _renderGenSelectedPanel();
 }
 
 function updateGenerateSelectedCount() {
     const visible = document.querySelectorAll('.gen-facility-cb').length;
     document.getElementById('generateSelectedCount').textContent =
-        `${_genSelectedIds.size} selected (${visible} shown)`;
+        `— ${_genSelectedIds.size} selected (${visible} shown in list)`;
+}
+
+function _renderGenSelectedPanel() {
+    updateGenerateSelectedCount();
+    const panel = document.getElementById('genSelectedPanel');
+    if (_genSelectedIds.size === 0) {
+        panel.innerHTML = '<p style="font-size: 13px; color: #6b5f54; font-style: italic;">No facilities selected yet.</p>';
+        return;
+    }
+    const selectedFacilities = allFacilities.filter(f => _genSelectedIds.has(String(f.id)));
+    panel.innerHTML = selectedFacilities.map(f => `
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 6px; margin-bottom: 3px; background: #edf3f9; border-radius: 3px; font-size: 13px;">
+            <span>${f.name}${f.address?.city ? ` <span style="color: #6b5f54;">(${f.address.city})</span>` : ''}</span>
+            <button onclick="_genDeselect('${String(f.id).replace(/'/g, "\\'")}')" style="background: none; border: none; cursor: pointer; color: #a94842; font-size: 15px; line-height: 1; padding: 0 2px;" title="Remove">✕</button>
+        </div>
+    `).join('');
+}
+
+function _genDeselect(facilityId) {
+    _genSelectedIds.delete(String(facilityId));
+    // Uncheck the checkbox in the list if it's visible
+    const cb = document.querySelector(`.gen-facility-cb[value="${facilityId}"]`);
+    if (cb) cb.checked = false;
+    _renderGenSelectedPanel();
 }
 
 function generateList() {

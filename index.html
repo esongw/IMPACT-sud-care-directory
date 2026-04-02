@@ -1438,12 +1438,19 @@
                         <!-- Clear filters + Select All/Deselect All -->
                         <div style="display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; align-items: center;">
                             <button class="btn btn-secondary" style="padding: 5px 12px; font-size: 13px; background: #6b5f54;" onclick="clearGenerateFilters()">Clear Filters</button>
-                            <button class="btn btn-secondary" style="padding: 5px 12px; font-size: 13px;" onclick="setAllGenerateFacilities(true)">Select All</button>
-                            <button class="btn btn-secondary" style="padding: 5px 12px; font-size: 13px;" onclick="setAllGenerateFacilities(false)">Deselect All</button>
-                            <span id="generateSelectedCount" style="font-size: 13px; color: #6b5f54;"></span>
+                            <button class="btn btn-secondary" style="padding: 5px 12px; font-size: 13px;" onclick="setAllGenerateFacilities(true)">Select All Shown</button>
+                            <button class="btn btn-secondary" style="padding: 5px 12px; font-size: 13px;" onclick="setAllGenerateFacilities(false)">Deselect All Shown</button>
                         </div>
 
                         <div id="generateFacilityList" style="max-height: 220px; overflow-y: auto; border: 1px solid #d4c9bc; border-radius: 4px; padding: 8px;"></div>
+                    </div>
+
+                    <!-- Selected facilities panel -->
+                    <div style="margin-bottom: 20px;">
+                        <h4 style="color: #4a7ba7; margin-bottom: 8px;">Selected Facilities <span id="generateSelectedCount" style="font-size: 13px; color: #6b5f54; font-weight: normal;"></span></h4>
+                        <div id="genSelectedPanel" style="max-height: 160px; overflow-y: auto; border: 1px solid #d4c9bc; border-radius: 4px; padding: 8px; background: #fefdfb;">
+                            <p style="font-size: 13px; color: #6b5f54; font-style: italic;">No facilities selected yet.</p>
+                        </div>
                     </div>
 
                     <!-- Output -->
