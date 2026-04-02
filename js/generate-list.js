@@ -18,6 +18,7 @@ const GENERATE_FIELDS = [
 
 // Modal-local filter state
 let _genCurrentFacilities = []; // current filtered list shown in modal
+let _genSelectedIds = new Set(); // persists across filter changes within one modal session
 
 function showGenerateListModal() {
     // Render field checkboxes
@@ -46,6 +47,9 @@ function showGenerateListModal() {
         badge.style.display = 'none';
     });
 
+    // Reset selection for a fresh session
+    _genSelectedIds = new Set();
+
     // Start from all facilities (independent of main page filters)
     _genCurrentFacilities = allFacilities.slice();
     renderGenerateFacilityList(_genCurrentFacilities);
@@ -58,10 +62,16 @@ function renderGenerateFacilityList(facilities) {
     _genCurrentFacilities = facilities;
     document.getElementById('generateFacilityList').innerHTML = facilities.map(f => `
         <label class="checkbox-label" style="display: flex; padding: 4px 0; border-bottom: 1px solid #f0ebe3;">
-            <input type="checkbox" class="gen-facility-cb" value="${f.id}" checked style="margin-right: 8px;">
+            <input type="checkbox" class="gen-facility-cb" value="${f.id}" ${_genSelectedIds.has(String(f.id)) ? 'checked' : ''} style="margin-right: 8px;" onchange="_genSyncCheckbox(this)">
             <span style="font-size: 13px;">${f.name}${f.name_secondary ? ` <em style="color:#6b5f54;">(${f.name_secondary})</em>` : ''}</span>
         </label>
     `).join('');
+    updateGenerateSelectedCount();
+}
+
+function _genSyncCheckbox(cb) {
+    if (cb.checked) _genSelectedIds.add(String(cb.value));
+    else _genSelectedIds.delete(String(cb.value));
     updateGenerateSelectedCount();
 }
 
@@ -251,14 +261,18 @@ function clearGenerateFilters() {
 }
 
 function setAllGenerateFacilities(checked) {
-    document.querySelectorAll('.gen-facility-cb').forEach(cb => cb.checked = checked);
+    document.querySelectorAll('.gen-facility-cb').forEach(cb => {
+        cb.checked = checked;
+        if (checked) _genSelectedIds.add(String(cb.value));
+        else _genSelectedIds.delete(String(cb.value));
+    });
     updateGenerateSelectedCount();
 }
 
 function updateGenerateSelectedCount() {
-    const total = document.querySelectorAll('.gen-facility-cb').length;
-    const selected = document.querySelectorAll('.gen-facility-cb:checked').length;
-    document.getElementById('generateSelectedCount').textContent = `${selected} of ${total} selected`;
+    const visible = document.querySelectorAll('.gen-facility-cb').length;
+    document.getElementById('generateSelectedCount').textContent =
+        `${_genSelectedIds.size} selected (${visible} shown)`;
 }
 
 function generateList() {
@@ -270,11 +284,14 @@ function generateList() {
         fields[f.id] = document.getElementById(`gen-field-${f.id}`)?.checked || false;
     });
 
-    // Which facilities are checked (from the currently rendered list)
-    const selectedIds = new Set(
-        Array.from(document.querySelectorAll('.gen-facility-cb:checked')).map(cb => String(cb.value))
-    );
-    const selected = _genCurrentFacilities.filter(f => selectedIds.has(String(f.id)));
+    // Sync any visible checkbox changes that happened without onchange firing
+    document.querySelectorAll('.gen-facility-cb').forEach(cb => {
+        if (cb.checked) _genSelectedIds.add(String(cb.value));
+        else _genSelectedIds.delete(String(cb.value));
+    });
+
+    // Build list from all facilities matching selected IDs (persists across filter changes)
+    const selected = allFacilities.filter(f => _genSelectedIds.has(String(f.id)));
 
     if (selected.length === 0) {
         alert('Please select at least one facility.');

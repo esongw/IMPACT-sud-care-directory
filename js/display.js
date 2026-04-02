@@ -169,9 +169,6 @@ function createFacilityDetails(facility) {
                     ${createContactTable(facility, customData, false)}
                 </div>
 
-                <!-- Staff Contacts -->
-                ${_renderStaffContactsSection(facility.id, customData)}
-
                 <!-- Patient Notes -->
                 <div class="notes-section" style="margin-bottom: 20px;">
                     <div class="notes-title">🗒️ Patient-Facing Notes</div>
@@ -183,6 +180,9 @@ function createFacilityDetails(facility) {
                         ${isAdmin() ? "" : "readonly"}
                     >${patientNotes}</textarea>
                 </div>
+
+                <!-- Staff Contacts -->
+                ${_renderStaffContactsSection(facility.id, customData)}
 
                 <!-- Clinical Staff Notes -->
                 <div class="notes-section" style="margin-bottom: 20px;">
