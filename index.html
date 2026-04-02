@@ -4023,13 +4023,8 @@
             }
 
             // Check auth on load
-            if (sessionStorage.getItem("authenticated") === "true") {
-                document
-                    .getElementById("login-overlay")
-                    .classList.add("hidden");
-            } else {
-                document.getElementById("login-password").focus();
-            }
+            // Login temporarily bypassed for demo
+            document.getElementById("login-overlay").classList.add("hidden");
         </script>
     </body>
 </html>
