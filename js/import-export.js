@@ -4,6 +4,7 @@ let pendingImportData = null;
 let uploadedCSVContent = null;
 
 function showImportModal() {
+    resetImportModal();
     document.getElementById("importModal").classList.add("show");
 }
 

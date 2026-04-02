@@ -31,8 +31,9 @@ function displayFacilities(facilities) {
 
     facilities.forEach((facility) => {
         const regionLabel = facility.county || "Unknown";
-
         const facilityId = `facility-${facility.id}`;
+        const hoursData = parseHoursData(getFacilityCustomData(facility.id)?.hours ?? facility.hours);
+        const hoursDisplay = hoursData.map(r => r.description ? `${r.description}: ${r.hours}` : r.hours).join('\n');
 
         html += `
             <tr onclick="toggleFacilityDetails('${facilityId}')">
@@ -45,7 +46,7 @@ function displayFacilities(facilities) {
                 <td>${facility.address.street1 || "N/A"}</td>
                 <td>${facility.address.city}</td>
                 <td>${facility.address.state}</td>
-                <td style="white-space: pre-line; font-size: 13px;">${getFacilityCustomData(facility.id)?.hours || facility.hours || ''}</td>
+                <td style="white-space: pre-line; font-size: 13px;">${hoursDisplay}</td>
                 <td>${
                     facility.contact.website &&
                     facility.contact.website !== "https://" &&
@@ -87,13 +88,7 @@ function toggleFacilityDetails(facilityId) {
             if (facility) {
                 cell.innerHTML = createFacilityDetails(facility);
                 cell.dataset.loaded = "true";
-                const textarea = cell.querySelector(`#notes-${facility.id}`);
-                if (textarea) {
-                    textarea.addEventListener("input", (e) => {
-                        updateNote(facility.id, e.target.value);
-                        updateTimestamp(facility.id);
-                    });
-                }
+                _attachDetailEventListeners(facility.id, cell);
             }
         }
         detailsRow.classList.add("show");
@@ -102,21 +97,46 @@ function toggleFacilityDetails(facilityId) {
     }
 }
 
+function _attachDetailEventListeners(facilityId, cell) {
+    const staffNoteTextarea = cell.querySelector(`#notes-${facilityId}`);
+    if (staffNoteTextarea) {
+        staffNoteTextarea.addEventListener("input", (e) => {
+            updateNote(facilityId, e.target.value);
+            updateTimestamp(facilityId);
+        });
+    }
+    const patientNoteTextarea = cell.querySelector(`#patient-notes-${facilityId}`);
+    if (patientNoteTextarea) {
+        patientNoteTextarea.addEventListener("input", (e) => {
+            updatePatientNote(facilityId, e.target.value);
+        });
+    }
+}
+
+// Render the hours list for display (handles array or legacy string)
+function _renderHoursDisplay(hoursData) {
+    if (!hoursData || hoursData.length === 0) return '';
+    if (hoursData.length === 1 && !hoursData[0].description) {
+        return `<p style="margin: 5px 0; white-space: pre-line;">${hoursData[0].hours}</p>`;
+    }
+    return hoursData.map(row =>
+        row.description
+            ? `<div style="margin: 4px 0;"><strong style="min-width: 120px; display: inline-block;">${row.description}:</strong> ${row.hours}</div>`
+            : `<div style="margin: 4px 0;">${row.hours}</div>`
+    ).join('');
+}
+
 // Create detailed facility information
 function createFacilityDetails(facility) {
-    const typeLabels = {
-        SA: "Substance Abuse",
-        MH: "Mental Health",
-        BOTH: "Both SA & MH",
-    };
-
     const note = getNote(facility.id);
     const documents = getFacilityDocuments(facility.id);
-    const hours = getFacilityCustomData(facility.id)?.hours || facility.hours || '';
+    const customData = getFacilityCustomData(facility.id);
+    const hoursData = parseHoursData(customData?.hours ?? facility.hours);
+    const patientNotes = customData?.patient_notes || '';
 
     return `
         <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 30px;">
-            <!-- Column 1: Address, Website, Contact, Notes, Documents -->
+            <!-- Column 1: Address, Contact, Notes, Documents -->
             <div>
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                     <h3 style="margin: 0; color: #2d2520;">${facility.name}</h3>
@@ -131,34 +151,47 @@ function createFacilityDetails(facility) {
                     <p style="margin: 5px 0;">${facility.address.city}, ${facility.address.state} ${facility.address.zip}</p>
                 </div>
 
-                ${hours ? `<div style="margin-bottom: 20px;">
+                ${hoursData.length > 0 ? `<div style="margin-bottom: 20px;">
                     <h4 style="color: #4a7ba7; margin-bottom: 10px; font-size: 16px;">🕐 Hours of Operation</h4>
-                    <p style="margin: 5px 0; white-space: pre-line;">${hours}</p>
+                    ${_renderHoursDisplay(hoursData)}
                 </div>` : ""}
 
-                ${
-                    facility.contact.website &&
-                    facility.contact.website !== "https://" &&
-                    facility.contact.website !== "http://"
-                        ? `<div style="margin-bottom: 20px;">
+                ${facility.contact.website && facility.contact.website !== "https://" && facility.contact.website !== "http://"
+                    ? `<div style="margin-bottom: 20px;">
                         <h4 style="color: #4a7ba7; margin-bottom: 10px; font-size: 16px;">🌐 Website</h4>
                         <p style="margin: 5px 0;"><a href="${facility.contact.website}" target="_blank" class="facility-website-link">${facility.contact.website}</a></p>
                     </div>`
-                        : ""
-                }
+                    : ""}
 
+                <!-- General Contacts -->
                 <div style="margin-bottom: 20px;">
                     <h4 style="color: #4a7ba7; margin-bottom: 10px; font-size: 16px;">📞 Contact Information</h4>
-                    ${createContactTable(facility)}
+                    ${createContactTable(facility, customData, false)}
                 </div>
 
+                <!-- Staff Contacts -->
+                ${_renderStaffContactsSection(facility.id, customData)}
+
+                <!-- Patient Notes -->
                 <div class="notes-section" style="margin-bottom: 20px;">
-                    <div class="notes-title">📝 Your Notes</div>
+                    <div class="notes-title">🗒️ Patient-Facing Notes</div>
+                    <textarea
+                        id="patient-notes-${facility.id}"
+                        class="notes-textarea"
+                        style="min-height: 120px;"
+                        placeholder="${isAdmin() ? "Add patient-facing notes (e.g. intake process, what to bring)..." : "Notes are read-only."}"
+                        ${isAdmin() ? "" : "readonly"}
+                    >${patientNotes}</textarea>
+                </div>
+
+                <!-- Clinical Staff Notes -->
+                <div class="notes-section" style="margin-bottom: 20px;">
+                    <div class="notes-title">🔒 Clinical Staff Notes</div>
                     <textarea
                         id="notes-${facility.id}"
                         class="notes-textarea"
                         style="min-height: 200px;"
-                        placeholder="${isAdmin() ? "Add your notes about this facility..." : "Notes are read-only."}"
+                        placeholder="${isAdmin() ? "Add internal clinical staff notes..." : "Notes are read-only."}"
                         ${isAdmin() ? "" : "readonly"}
                     >${note.text}</textarea>
                     <div id="timestamp-${facility.id}" class="notes-timestamp">
@@ -166,14 +199,12 @@ function createFacilityDetails(facility) {
                     </div>
                 </div>
 
+                <!-- Documents -->
                 <div style="padding: 15px; background: #f0ebe3; border-radius: 4px;">
                     <h4 style="margin-bottom: 10px; color: #2d2520; font-size: 16px;">📄 Facility Documents</h4>
                     <div id="documents-list-${facility.id}" style="margin-bottom: 10px;">
-                        ${
-                            documents.length > 0
-                                ? documents
-                                      .map(
-                                          (doc) => `
+                        ${documents.length > 0
+                            ? documents.map((doc) => `
                                 <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px; background: white; margin-bottom: 5px; border-radius: 2px;">
                                     <span style="font-size: 14px; flex: 1;">${doc.name}</span>
                                     <div style="display: flex; gap: 5px;">
@@ -181,10 +212,8 @@ function createFacilityDetails(facility) {
                                         ${isAdmin() ? `<button class="btn btn-secondary" style="padding: 4px 12px; font-size: 12px; background: #a94842;" onclick="event.stopPropagation(); deleteDocument('${facility.id}', '${doc.name.replace(/'/g, "\\'")}')">🗑 Delete</button>` : ""}
                                     </div>
                                 </div>
-                            `,
-                                      )
-                                      .join("")
-                                : '<p style="font-size: 14px; color: #6b5f54; font-style: italic;">No documents uploaded yet.</p>'
+                            `).join("")
+                            : '<p style="font-size: 14px; color: #6b5f54; font-style: italic;">No documents uploaded yet.</p>'
                         }
                     </div>
                     ${isAdmin() ? `
@@ -204,35 +233,44 @@ function createFacilityDetails(facility) {
     `;
 }
 
-function createContactTable(facility) {
-    // Get custom contacts if they exist
-    const customData = getFacilityCustomData(facility.id);
+function _renderStaffContactsSection(facilityId, customData) {
+    const staffContacts = customData?.staff_contacts || [];
+    if (staffContacts.length === 0) return '';
 
-    // If contacts have been saved (even as empty), use them exclusively.
-    // Otherwise fall back to the defaults from the JSON data.
+    return `
+        <div style="margin-bottom: 20px; padding: 15px; background: #f0f0f8; border-radius: 4px; border-left: 3px solid #7b7bba;">
+            <h4 style="color: #4a4a8a; margin-bottom: 10px; font-size: 16px;">🔒 Contact Information for Staff</h4>
+            <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                <thead>
+                    <tr style="border-bottom: 2px solid #c4c4d4;">
+                        <th style="text-align: left; padding: 8px; font-weight: 600; color: #4a4035;">Type</th>
+                        <th style="text-align: left; padding: 8px; font-weight: 600; color: #4a4035;">Notes</th>
+                        <th style="text-align: left; padding: 8px; font-weight: 600; color: #4a4035;">Contact Info</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${staffContacts.map((c) => `
+                        <tr style="border-bottom: 1px solid #d4cfc4;">
+                            <td style="padding: 8px; vertical-align: top;">${c.type}</td>
+                            <td style="padding: 8px; vertical-align: top; color: #6b5f54;">${c.notes || "—"}</td>
+                            <td style="padding: 8px; vertical-align: top;">${c.info}</td>
+                        </tr>
+                    `).join("")}
+                </tbody>
+            </table>
+        </div>
+    `;
+}
+
+function createContactTable(facility, customData, includeStaff) {
     let allContacts;
     if (customData?.contacts !== undefined) {
         allContacts = customData.contacts;
     } else {
         allContacts = [];
-        if (facility.contact.phone)
-            allContacts.push({
-                type: "Phone",
-                notes: "",
-                info: facility.contact.phone,
-            });
-        if (facility.contact.intake_phone)
-            allContacts.push({
-                type: "Intake Phone",
-                notes: "",
-                info: facility.contact.intake_phone,
-            });
-        if (facility.contact.hotline)
-            allContacts.push({
-                type: "Hotline",
-                notes: "",
-                info: facility.contact.hotline,
-            });
+        if (facility.contact.phone) allContacts.push({ type: "Phone", notes: "", info: facility.contact.phone });
+        if (facility.contact.intake_phone) allContacts.push({ type: "Intake Phone", notes: "", info: facility.contact.intake_phone });
+        if (facility.contact.hotline) allContacts.push({ type: "Hotline", notes: "", info: facility.contact.hotline });
     }
 
     if (allContacts.length === 0) {
@@ -249,128 +287,59 @@ function createContactTable(facility) {
                 </tr>
             </thead>
             <tbody>
-                ${allContacts
-                    .map(
-                        (contact) => `
+                ${allContacts.map((contact) => `
                     <tr style="border-bottom: 1px solid #ede8dd;">
                         <td style="padding: 8px; vertical-align: top;">${contact.type}</td>
                         <td style="padding: 8px; vertical-align: top; color: #6b5f54;">${contact.notes || "—"}</td>
                         <td style="padding: 8px; vertical-align: top;">${contact.info}</td>
                     </tr>
-                `,
-                    )
-                    .join("")}
+                `).join("")}
             </tbody>
         </table>
     `;
 }
 
 function createCollapsibleServicesSection(facility) {
-    // Check for custom data first
     const customData = getFacilityCustomData(facility.id);
     const services = facility.services;
     let html = "";
 
-    // Extract medications - prefer custom data
     let medications = customData?.medications || [];
-    if (
-        medications.length === 0 &&
-        services?.other_services?.length > 0
-    ) {
+    if (medications.length === 0 && services?.other_services?.length > 0) {
         services.other_services.forEach((service) => {
-            if (
-                (service.code === "OM" || service.code === "PHR") &&
-                service.values
-            ) {
+            if ((service.code === "OM" || service.code === "PHR") && service.values) {
                 medications.push(...service.values);
             }
         });
     }
 
-    // Pharmacotherapies
     if (medications.length > 0) {
-        html += createCollapsibleSection(
-            facility.id,
-            "pharmacotherapies",
-            "💊 Pharmacotherapies Available",
-            medications
-                .map(
-                    (med) =>
-                        `<span class="service-tag medication-tag">${med}</span>`,
-                )
-                .join(""),
-        );
+        html += createCollapsibleSection(facility.id, "pharmacotherapies", "💊 Pharmacotherapies Available",
+            medications.map((med) => `<span class="service-tag medication-tag">${med}</span>`).join(""));
     }
 
-    // Service Settings - prefer custom data
-    const serviceSettings =
-        customData?.service_settings ||
-        services?.service_settings ||
-        [];
+    const serviceSettings = customData?.service_settings || services?.service_settings || [];
     if (serviceSettings.length > 0) {
-        html += createCollapsibleSection(
-            facility.id,
-            "service-settings",
-            "🏢 Service Settings",
-            serviceSettings
-                .map(
-                    (setting) =>
-                        `<span class="service-tag">${setting}</span>`,
-                )
-                .join(""),
-        );
+        html += createCollapsibleSection(facility.id, "service-settings", "🏢 Service Settings",
+            serviceSettings.map((setting) => `<span class="service-tag">${setting}</span>`).join(""));
     }
 
-    // Special Programs - prefer custom data
-    const specialPrograms =
-        customData?.special_programs ||
-        services?.special_programs ||
-        [];
+    const specialPrograms = customData?.special_programs || services?.special_programs || [];
     if (specialPrograms.length > 0) {
-        html += createCollapsibleSection(
-            facility.id,
-            "special-programs",
-            "⭐ Special Programs",
-            specialPrograms
-                .map(
-                    (program) =>
-                        `<span class="service-tag">${program}</span>`,
-                )
-                .join(""),
-        );
+        html += createCollapsibleSection(facility.id, "special-programs", "⭐ Special Programs",
+            specialPrograms.map((program) => `<span class="service-tag">${program}</span>`).join(""));
     }
 
-    // Payment Options - prefer custom data
-    const paymentOptions =
-        customData?.payment_options ||
-        services?.payment_options ||
-        [];
+    const paymentOptions = customData?.payment_options || services?.payment_options || [];
     if (paymentOptions.length > 0) {
-        html += createCollapsibleSection(
-            facility.id,
-            "payment-options",
-            "💳 Payment Options",
-            paymentOptions
-                .map(
-                    (payment) =>
-                        `<span class="service-tag">${payment}</span>`,
-                )
-                .join(""),
-        );
+        html += createCollapsibleSection(facility.id, "payment-options", "💳 Payment Options",
+            paymentOptions.map((payment) => `<span class="service-tag">${payment}</span>`).join(""));
     }
 
-    return (
-        html ||
-        '<p style="color: #6b5f54; font-style: italic;">No service information available.</p>'
-    );
+    return html || '<p style="color: #6b5f54; font-style: italic;">No service information available.</p>';
 }
 
-function createCollapsibleSection(
-    facilityId,
-    sectionId,
-    title,
-    content,
-) {
+function createCollapsibleSection(facilityId, sectionId, title, content) {
     const fullId = `${facilityId}-${sectionId}`;
     return `
         <div style="margin-bottom: 15px; border: 1px solid #d4cfc4; border-radius: 4px; overflow: hidden;">
@@ -379,9 +348,7 @@ function createCollapsibleSection(
                 <span id="toggle-${fullId}" style="font-size: 12px; transition: transform 0.2s;">▼</span>
             </div>
             <div id="content-${fullId}" class="collapsible-content" style="display: none; padding: 12px; background: white;">
-                <div class="service-tags">
-                    ${content}
-                </div>
+                <div class="service-tags">${content}</div>
             </div>
         </div>
     `;
@@ -390,7 +357,6 @@ function createCollapsibleSection(
 function toggleServiceSection(sectionId) {
     const content = document.getElementById(`content-${sectionId}`);
     const toggle = document.getElementById(`toggle-${sectionId}`);
-
     if (content.style.display === "none") {
         content.style.display = "block";
         toggle.style.transform = "rotate(180deg)";
@@ -400,14 +366,10 @@ function toggleServiceSection(sectionId) {
     }
 }
 
-// Update timestamp display
 function updateTimestamp(facilityId) {
     const note = getNote(facilityId);
-    const timestampEl = document.getElementById(
-        `timestamp-${facilityId}`,
-    );
+    const timestampEl = document.getElementById(`timestamp-${facilityId}`);
     if (timestampEl && note.timestamp) {
-        const date = new Date(note.timestamp);
-        timestampEl.textContent = `Last updated: ${date.toLocaleString()}`;
+        timestampEl.textContent = `Last updated: ${new Date(note.timestamp).toLocaleString()}`;
     }
 }

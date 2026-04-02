@@ -82,6 +82,10 @@ async function handleDocumentUpload(event, facilityId) {
                     updateTimestamp(facilityId);
                 });
             }
+            const patientTextarea = document.getElementById(`patient-notes-${facilityId}`);
+            if (patientTextarea) {
+                patientTextarea.addEventListener("input", (e) => updatePatientNote(facilityId, e.target.value));
+            }
         }
     }
     alert("Document uploaded successfully!");
@@ -236,6 +240,13 @@ async function loadNotes() {
     data.forEach(row => {
         facilityNotes[row.facility_id] = { text: row.text, timestamp: row.updated_at };
     });
+}
+
+// Update patient-facing note (stored in facility_edits)
+function updatePatientNote(facilityId, text) {
+    if (!facilityCustomData[facilityId]) facilityCustomData[facilityId] = {};
+    facilityCustomData[facilityId].patient_notes = text;
+    debounce(`patient-note-${facilityId}`, () => saveFacilityCustomData(facilityId));
 }
 
 // Update note for a facility (debounced save to Supabase)

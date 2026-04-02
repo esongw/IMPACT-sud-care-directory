@@ -9,6 +9,7 @@ const GENERATE_FIELDS = [
     { id: 'phone',            label: 'Phone / Contact',    checked: true  },
     { id: 'website',          label: 'Website',            checked: true  },
     { id: 'hours',            label: 'Hours',              checked: false },
+    { id: 'patient_notes',    label: 'Patient Notes',      checked: false },
     { id: 'medications',      label: 'Pharmacotherapies',  checked: false },
     { id: 'service_settings', label: 'Service Settings',   checked: false },
     { id: 'payment_options',  label: 'Payment Options',    checked: false },
@@ -305,8 +306,13 @@ function generateList() {
         if (fields.website && f.contact?.website && f.contact.website !== 'https://' && f.contact.website !== 'http://') {
             rows.push(`  Website: ${f.contact.website}`);
         }
-        const hours = customData?.hours || f.hours || '';
-        if (fields.hours && hours) rows.push(`  Hours: ${hours}`);
+        const hoursData = parseHoursData(customData?.hours ?? f.hours);
+        if (fields.hours && hoursData.length > 0) {
+            hoursData.forEach(r => rows.push(`  ${r.description ? r.description + ': ' : 'Hours: '}${r.hours}`));
+        }
+
+        const patientNotes = customData?.patient_notes || '';
+        if (fields.patient_notes && patientNotes) rows.push(`  Notes: ${patientNotes}`);
 
         const meds = customData?.medications || extractMedicationsFromFacility(f);
         if (fields.medications && meds.length) rows.push(`  Pharmacotherapies: ${meds.join(', ')}`);

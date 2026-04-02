@@ -1836,18 +1836,51 @@
                         style="margin-bottom: 20px; color: #2d2520"
                     ></h4>
 
-                    <!-- Contacts Section -->
+                    <!-- General Contacts Section -->
                     <div style="margin-bottom: 25px">
-                        <h4 style="color: #4a7ba7; margin-bottom: 15px">
-                            📞 Contact Information
+                        <h4 style="color: #4a7ba7; margin-bottom: 4px">
+                            📞 General Contacts
                         </h4>
+                        <p style="font-size: 13px; color: #6b5f54; margin-bottom: 12px;">Shown in the Generate List (patient/public-facing)</p>
                         <div id="editContactsList"></div>
                         <button
                             class="btn btn-secondary"
                             style="margin-top: 10px"
                             onclick="addContactRow()"
                         >
-                            ➕ Add Contact
+                            ➕ Add General Contact
+                        </button>
+                    </div>
+
+                    <!-- Staff Contacts Section -->
+                    <div style="margin-bottom: 25px">
+                        <h4 style="color: #4a7ba7; margin-bottom: 4px">
+                            🔒 Contact Information for Staff
+                        </h4>
+                        <p style="font-size: 13px; color: #6b5f54; margin-bottom: 12px;">Internal use only — not included in the Generate List</p>
+                        <div id="editStaffContactsList"></div>
+                        <button
+                            class="btn btn-secondary"
+                            style="margin-top: 10px"
+                            onclick="addStaffContactRow()"
+                        >
+                            ➕ Add Staff Contact
+                        </button>
+                    </div>
+
+                    <!-- Hours Section -->
+                    <div style="margin-bottom: 25px">
+                        <h4 style="color: #4a7ba7; margin-bottom: 4px">
+                            🕐 Hours of Operation
+                        </h4>
+                        <p style="font-size: 13px; color: #6b5f54; margin-bottom: 12px;">Add one or more rows. Description is optional (e.g. "Office", "Crisis Line").</p>
+                        <div id="editFacilityHoursRows"></div>
+                        <button
+                            class="btn btn-secondary"
+                            style="margin-top: 10px"
+                            onclick="addHoursRow()"
+                        >
+                            ➕ Add Hours Row
                         </button>
                     </div>
 
@@ -1900,19 +1933,6 @@
                         >
                             <!-- Dynamically populated -->
                         </div>
-                    </div>
-
-                    <!-- Hours Section -->
-                    <div style="margin-bottom: 25px">
-                        <h4 style="color: #4a7ba7; margin-bottom: 10px">
-                            🕐 Hours of Operation
-                        </h4>
-                        <textarea
-                            id="editFacilityHours"
-                            class="search-box"
-                            style="min-height: 60px; width: 100%"
-                            placeholder="e.g. Mon–Fri: 8am–5pm, Sat: 9am–1pm"
-                        ></textarea>
                     </div>
 
                     <!-- Special Programs Section -->
