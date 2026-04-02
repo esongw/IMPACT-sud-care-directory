@@ -4,6 +4,7 @@
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Oregon SUD Treatment Facilities</title>
+        <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
         <style>
             * {
                 margin: 0;
@@ -1787,6 +1788,16 @@
         </div>
 
         <script>
+            // Supabase client
+            const _supabase = window.supabase.createClient('__SUPABASE_URL__', '__SUPABASE_ANON_KEY__');
+
+            // Debounce helper for note saves
+            const _debounceTimers = {};
+            function debounce(key, fn, delay = 1000) {
+                clearTimeout(_debounceTimers[key]);
+                _debounceTimers[key] = setTimeout(fn, delay);
+            }
+
             let allFacilities = [];
             let filteredFacilities = [];
             let facilityNotes = {};
@@ -1801,23 +1812,22 @@
                 return facilityCustomData[facilityId] || null;
             }
 
-            function saveFacilityCustomData() {
-                localStorage.setItem(
-                    "facilityCustomData",
-                    JSON.stringify(facilityCustomData),
-                );
+            async function saveFacilityCustomData(facilityId) {
+                const data = facilityCustomData[facilityId];
+                if (!data) return;
+                const { error } = await _supabase.from('facility_edits').upsert({
+                    facility_id: String(facilityId),
+                    data,
+                    updated_at: new Date().toISOString()
+                });
+                if (error) console.error('Error saving facility edit:', error);
             }
 
-            function loadFacilityCustomData() {
-                const stored = localStorage.getItem("facilityCustomData");
-                if (stored) {
-                    try {
-                        facilityCustomData = JSON.parse(stored);
-                    } catch (e) {
-                        console.error("Error loading facility custom data:", e);
-                        facilityCustomData = {};
-                    }
-                }
+            async function loadFacilityCustomData() {
+                const { data, error } = await _supabase.from('facility_edits').select('*');
+                if (error) { console.error('Error loading facility edits:', error); return; }
+                facilityCustomData = {};
+                data.forEach(row => { facilityCustomData[row.facility_id] = row.data; });
             }
 
             // Extract all unique options from all facilities
@@ -1881,135 +1891,98 @@
                 return facilityDocuments[facilityId] || [];
             }
 
-            function saveFacilityDocuments() {
-                localStorage.setItem(
-                    "facilityDocuments",
-                    JSON.stringify(facilityDocuments),
-                );
+            async function loadFacilityDocuments() {
+                const { data, error } = await _supabase.from('documents').select('facility_id, name, storage_path, uploaded_at');
+                if (error) { console.error('Error loading documents:', error); return; }
+                facilityDocuments = {};
+                data.forEach(row => {
+                    if (!facilityDocuments[row.facility_id]) facilityDocuments[row.facility_id] = [];
+                    facilityDocuments[row.facility_id].push({ name: row.name, storagePath: row.storage_path, uploadedAt: row.uploaded_at });
+                });
             }
 
-            function loadFacilityDocuments() {
-                const stored = localStorage.getItem("facilityDocuments");
-                if (stored) {
-                    try {
-                        facilityDocuments = JSON.parse(stored);
-                    } catch (e) {
-                        console.error("Error loading facility documents:", e);
-                        facilityDocuments = {};
-                    }
-                }
-            }
-
-            function handleDocumentUpload(event, facilityId) {
+            async function handleDocumentUpload(event, facilityId) {
                 const file = event.target.files[0];
                 if (!file) return;
 
-                // Check file size (limit to 5MB)
-                if (file.size > 5 * 1024 * 1024) {
-                    alert("File size must be less than 5MB");
+                if (file.size > 10 * 1024 * 1024) {
+                    alert("File size must be less than 10MB");
                     return;
                 }
 
-                const reader = new FileReader();
-                reader.onload = function (e) {
-                    const base64Data = e.target.result;
+                // Check for duplicate
+                const existing = (facilityDocuments[facilityId] || []).find(d => d.name === file.name);
+                if (existing) {
+                    if (!confirm(`A document named "${file.name}" already exists. Replace it?`)) return;
+                    await _supabase.storage.from('facility-documents').remove([existing.storagePath]);
+                    await _supabase.from('documents').delete().eq('facility_id', String(facilityId)).eq('name', file.name);
+                }
 
-                    // Initialize facility documents array if needed
-                    if (!facilityDocuments[facilityId]) {
-                        facilityDocuments[facilityId] = [];
-                    }
+                const storagePath = `${facilityId}/${file.name}`;
+                const { error: uploadError } = await _supabase.storage.from('facility-documents').upload(storagePath, file, { upsert: true });
+                if (uploadError) { alert('Upload failed: ' + uploadError.message); return; }
 
-                    // Check if document with same name already exists
-                    const existingIndex = facilityDocuments[
-                        facilityId
-                    ].findIndex((doc) => doc.name === file.name);
-                    if (existingIndex >= 0) {
-                        if (
-                            !confirm(
-                                `A document named "${file.name}" already exists. Replace it?`,
-                            )
-                        ) {
-                            return;
-                        }
-                        facilityDocuments[facilityId][existingIndex] = {
-                            name: file.name,
-                            data: base64Data,
-                            uploadedAt: new Date().toISOString(),
-                        };
-                    } else {
-                        facilityDocuments[facilityId].push({
-                            name: file.name,
-                            data: base64Data,
-                            uploadedAt: new Date().toISOString(),
-                        });
-                    }
+                const { error: dbError } = await _supabase.from('documents').upsert({
+                    facility_id: String(facilityId), name: file.name,
+                    storage_path: storagePath, uploaded_at: new Date().toISOString()
+                });
+                if (dbError) { alert('Failed to save document metadata: ' + dbError.message); return; }
 
-                    saveFacilityDocuments();
+                if (!facilityDocuments[facilityId]) facilityDocuments[facilityId] = [];
+                const idx = facilityDocuments[facilityId].findIndex(d => d.name === file.name);
+                const entry = { name: file.name, storagePath, uploadedAt: new Date().toISOString() };
+                if (idx >= 0) facilityDocuments[facilityId][idx] = entry;
+                else facilityDocuments[facilityId].push(entry);
 
-                    // Refresh the display
-                    const facility = allFacilities.find(
-                        (f) => f.id == facilityId,
-                    );
-                    if (facility) {
-                        const detailsCell = document.querySelector(
-                            `#facility-${facilityId} .facility-details-cell`,
-                        );
-                        if (detailsCell) {
-                            detailsCell.innerHTML =
-                                createFacilityDetails(facility);
-
-                            // Reattach notes event listener
-                            const textarea = document.getElementById(
-                                `notes-${facilityId}`,
-                            );
-                            if (textarea) {
-                                textarea.addEventListener("input", (e) => {
-                                    updateNote(facilityId, e.target.value);
-                                    updateTimestamp(facilityId);
-                                });
-                            }
+                // Refresh the display
+                const facility = allFacilities.find(f => f.id == facilityId);
+                if (facility) {
+                    const detailsCell = document.querySelector(`#facility-${facilityId} .facility-details-cell`);
+                    if (detailsCell) {
+                        detailsCell.innerHTML = createFacilityDetails(facility);
+                        const textarea = document.getElementById(`notes-${facilityId}`);
+                        if (textarea) {
+                            textarea.addEventListener("input", (e) => {
+                                updateNote(facilityId, e.target.value);
+                                updateTimestamp(facilityId);
+                            });
                         }
                     }
-
-                    alert("Document uploaded successfully!");
-                };
-                reader.readAsDataURL(file);
+                }
+                alert("Document uploaded successfully!");
             }
 
-            function downloadDocument(facilityId, documentName) {
-                const documents = facilityDocuments[facilityId];
-                if (!documents) return;
-
-                const doc = documents.find((d) => d.name === documentName);
+            async function downloadDocument(facilityId, documentName) {
+                const docs = facilityDocuments[facilityId];
+                if (!docs) return;
+                const doc = docs.find(d => d.name === documentName);
                 if (!doc) return;
-
-                // Create download link
+                const { data, error } = await _supabase.storage.from('facility-documents').download(doc.storagePath);
+                if (error) { alert('Download failed: ' + error.message); return; }
+                const url = URL.createObjectURL(data);
                 const link = document.createElement("a");
-                link.href = doc.data;
+                link.href = url;
                 link.download = documentName;
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
+                URL.revokeObjectURL(url);
             }
 
-            function deleteDocument(facilityId, documentName) {
-                if (
-                    !confirm(
-                        `Are you sure you want to delete "${documentName}"?`,
-                    )
-                ) {
-                    return;
-                }
+            async function deleteDocument(facilityId, documentName) {
+                if (!confirm(`Are you sure you want to delete "${documentName}"?`)) return;
 
-                const documents = facilityDocuments[facilityId];
-                if (!documents) return;
+                const docs = facilityDocuments[facilityId];
+                if (!docs) return;
+                const doc = docs.find(d => d.name === documentName);
+                if (!doc) return;
 
-                const index = documents.findIndex(
-                    (d) => d.name === documentName,
-                );
+                await _supabase.storage.from('facility-documents').remove([doc.storagePath]);
+                await _supabase.from('documents').delete().eq('facility_id', String(facilityId)).eq('name', documentName);
+
+                const index = docs.findIndex(d => d.name === documentName);
                 if (index >= 0) {
-                    documents.splice(index, 1);
-                    saveFacilityDocuments();
+                    docs.splice(index, 1);
 
                     // Refresh the display
                     const facility = allFacilities.find(
@@ -2480,7 +2453,7 @@
                 // Save custom data
                 facilityCustomData[currentEditingFacilityId] =
                     pendingFacilityEdits;
-                saveFacilityCustomData();
+                saveFacilityCustomData(currentEditingFacilityId);
 
                 // Update the facility object in memory (for immediate display)
                 const facility = allFacilities.find(
@@ -2797,33 +2770,30 @@
                 "Yakima": "Yakima, WA",
             };
 
-            // Load notes from localStorage
-            function loadNotes() {
-                const saved = localStorage.getItem("facilityNotes");
-                if (saved) {
-                    try {
-                        facilityNotes = JSON.parse(saved);
-                    } catch (e) {
-                        facilityNotes = {};
-                    }
-                }
+            // Load notes from Supabase
+            async function loadNotes() {
+                const { data, error } = await _supabase.from('notes').select('*');
+                if (error) { console.error('Error loading notes:', error); return; }
+                facilityNotes = {};
+                data.forEach(row => {
+                    facilityNotes[row.facility_id] = { text: row.text, timestamp: row.updated_at };
+                });
             }
 
-            // Save notes to localStorage
-            function saveNotes() {
-                localStorage.setItem(
-                    "facilityNotes",
-                    JSON.stringify(facilityNotes),
-                );
-            }
-
-            // Update note for a facility
+            // Update note for a facility (debounced save to Supabase)
             function updateNote(facilityId, noteText) {
                 facilityNotes[facilityId] = {
                     text: noteText,
                     timestamp: new Date().toISOString(),
                 };
-                saveNotes();
+                debounce(`note-${facilityId}`, async () => {
+                    const { error } = await _supabase.from('notes').upsert({
+                        facility_id: String(facilityId),
+                        text: noteText,
+                        updated_at: new Date().toISOString()
+                    });
+                    if (error) console.error('Error saving note:', error);
+                });
             }
 
             // Get note for a facility
@@ -2855,21 +2825,10 @@
                         facility.county = getCityCounty(facility.address.city);
                     });
 
-                    // Load custom facilities from localStorage
-                    const customFacilitiesJSON =
-                        localStorage.getItem("customFacilities");
-                    if (customFacilitiesJSON) {
-                        try {
-                            const customFacilities =
-                                JSON.parse(customFacilitiesJSON);
-                            allFacilities =
-                                allFacilities.concat(customFacilities);
-                        } catch (e) {
-                            console.error(
-                                "Error loading custom facilities:",
-                                e,
-                            );
-                        }
+                    // Load custom facilities from Supabase
+                    const { data: customRows } = await _supabase.from('custom_facilities').select('data');
+                    if (customRows && customRows.length > 0) {
+                        allFacilities = allFacilities.concat(customRows.map(r => r.data));
                     }
 
                     filteredFacilities = allFacilities;
@@ -3401,11 +3360,12 @@
                 .getElementById("citySearchBox")
                 .addEventListener("input", filterFacilities);
 
-            // Load notes, documents, custom data, and facilities on page load
-            loadNotes();
-            loadFacilityDocuments();
-            loadFacilityCustomData();
-            loadFacilities();
+            // Initialize app — load all shared data then render
+            async function initApp() {
+                await Promise.all([loadNotes(), loadFacilityDocuments(), loadFacilityCustomData()]);
+                await loadFacilities();
+            }
+            initApp();
 
             // Import/Export Functions
             function showImportModal() {
@@ -3713,8 +3673,14 @@
                     updatedCount++;
                 });
 
-                // Save to localStorage
-                saveFacilityNotes();
+                // Save notes to Supabase
+                for (const update of pendingImportData) {
+                    await _supabase.from('notes').upsert({
+                        facility_id: String(update.id),
+                        text: update.newNotes,
+                        updated_at: new Date().toISOString()
+                    });
+                }
 
                 // Update display for any currently visible facilities
                 pendingImportData.forEach((update) => {
@@ -3928,13 +3894,8 @@
                 // Add to facilities list
                 allFacilities.push(newFacility);
 
-                // Save to localStorage
-                localStorage.setItem(
-                    "customFacilities",
-                    JSON.stringify(
-                        allFacilities.filter((f) => f.id.startsWith("custom-")),
-                    ),
-                );
+                // Save to Supabase
+                await _supabase.from('custom_facilities').upsert({ id: newFacility.id, data: newFacility });
 
                 // Refresh display
                 filterFacilities();
@@ -3947,7 +3908,7 @@
 
             function exportNotesTemplate() {
                 const password = prompt("Enter admin password:");
-                if (password !== "impact_admin") {
+                if (password !== "__ADMIN_PASSWORD__") {
                     if (password !== null) {
                         alert("Incorrect password. Access denied.");
                     }

@@ -24,18 +24,28 @@ jobs:
         env:
           LOGIN_PASSWORD: ${{ secrets.LOGIN_PASSWORD }}
           ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
           python3 - <<'EOF'
           import os, sys
           login_pw = os.environ.get('LOGIN_PASSWORD', '')
           admin_pw = os.environ.get('ADMIN_PASSWORD', '')
-          if not login_pw or not admin_pw:
-              print("ERROR: One or more secrets are empty!", file=sys.stderr)
+          supabase_url = os.environ.get('SUPABASE_URL', '')
+          supabase_key = os.environ.get('SUPABASE_ANON_KEY', '')
+          missing = [name for name, val in [
+              ('LOGIN_PASSWORD', login_pw), ('ADMIN_PASSWORD', admin_pw),
+              ('SUPABASE_URL', supabase_url), ('SUPABASE_ANON_KEY', supabase_key)
+          ] if not val]
+          if missing:
+              print(f"ERROR: Missing secrets: {', '.join(missing)}", file=sys.stderr)
               sys.exit(1)
           with open('index.html', 'r') as f:
               content = f.read()
           content = content.replace('__LOGIN_PASSWORD__', login_pw)
           content = content.replace('__ADMIN_PASSWORD__', admin_pw)
+          content = content.replace('__SUPABASE_URL__', supabase_url)
+          content = content.replace('__SUPABASE_ANON_KEY__', supabase_key)
           with open('index.html', 'w') as f:
               f.write(content)
           print("Secrets injected successfully.")
