@@ -3262,12 +3262,8 @@
                 .getElementById("citySearchBox")
                 .addEventListener("input", filterFacilities);
 
-            // Initialize app — load all shared data then render
-            async function initApp() {
-                await Promise.all([loadNotes(), loadFacilityDocuments(), loadFacilityCustomData()]);
-                await loadFacilities();
-            }
-            initApp();
+            // Initialize app
+            loadFacilities();
 
             // Import/Export Functions
             function showImportModal() {
