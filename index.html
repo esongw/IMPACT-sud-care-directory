@@ -1241,22 +1241,22 @@
                         Is there a SUD care facility that needs to be added to
                         this directory?
                     </p>
-                    <div style="display: flex; justify-content: center" class="admin-only">
-                        <button
-                            class="btn btn-primary"
-                            onclick="showAddFacilityModal()"
-                            style="font-size: 15px; padding: 12px 24px"
-                        >
-                            ➕ Add Facility
-                        </button>
-                    </div>
                 </div>
             </div>
 
-            <div style="display: flex; justify-content: center; margin-bottom: 12px;">
-                <button class="btn btn-secondary" onclick="showGenerateListModal()" style="font-size: 14px; padding: 10px 22px;">
-                    📋 Generate Facility List
-                </button>
+            <div style="background: #f0ebe3; border-radius: 4px; padding: 16px; margin-bottom: 16px;">
+                <div class="admin-only" style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; margin-bottom: 12px; border-bottom: 1px solid #d4c9bc;">
+                    <span style="font-size: 14px; color: #4a4035;">Do you want to add a new facility?</span>
+                    <button class="btn btn-primary" onclick="showAddFacilityModal()" style="font-size: 14px; padding: 8px 18px; white-space: nowrap;">
+                        ➕ Add Facility
+                    </button>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 14px; color: #4a4035;">Do you need facility information to add to your AVS?</span>
+                    <button class="btn btn-secondary" onclick="showGenerateListModal()" style="font-size: 14px; padding: 8px 18px; white-space: nowrap; margin-left: 16px;">
+                        📋 Generate Facility List
+                    </button>
+                </div>
             </div>
 
             <div class="notes-management admin-only">
@@ -1321,7 +1321,7 @@
                             <h4 style="color: #4a7ba7; margin: 0;">Generated List</h4>
                             <button class="btn btn-primary" style="padding: 6px 14px; font-size: 13px;" onclick="copyGeneratedList()">📋 Copy to Clipboard</button>
                         </div>
-                        <textarea id="generatedListText" class="notes-textarea" style="min-height: 300px; width: 100%; box-sizing: border-box;" readonly></textarea>
+                        <div id="generatedListText" contenteditable="true" style="min-height: 300px; width: 100%; box-sizing: border-box; border: 1px solid #d4c9bc; border-radius: 2px; padding: 10px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 14px; line-height: 1.6; background: #fefdfb; white-space: pre-wrap; overflow-y: auto;"></div>
                     </div>
 
                 </div>
@@ -4127,67 +4127,67 @@
                     return;
                 }
 
-                const lines = selected.map((f, i) => {
+                const blocks = selected.map((f, i) => {
                     const customData = getFacilityCustomData(f.id);
-                    const parts = [];
+                    const rows = [];
 
-                    if (fields.name) parts.push(f.name);
-                    if (fields.name_secondary && f.name_secondary) parts.push(`  Also known as: ${f.name_secondary}`);
-                    if (fields.facility_type && f.facility_type) parts.push(`  Type: ${typeLabels[f.facility_type] || f.facility_type}`);
-                    if (fields.county && f.county) parts.push(`  County: ${f.county}`);
+                    if (fields.name) rows.push(`<strong>${i + 1}. ${f.name}</strong>`);
+                    if (fields.name_secondary && f.name_secondary) rows.push(`  Also known as: ${f.name_secondary}`);
+                    if (fields.facility_type && f.facility_type) rows.push(`  Type: ${typeLabels[f.facility_type] || f.facility_type}`);
+                    if (fields.county && f.county) rows.push(`  County: ${f.county}`);
                     if (fields.address && f.address) {
                         const a = f.address;
-                        const line2 = a.street2 ? `\n           ${a.street2}` : '';
-                        parts.push(`  Address: ${a.street1}${line2}\n           ${a.city}, ${a.state} ${a.zip}`);
+                        rows.push(`  Address: ${a.street1}${a.street2 ? ', ' + a.street2 : ''}, ${a.city}, ${a.state} ${a.zip}`);
                     }
                     if (fields.phone) {
-                        const contacts = customData?.contacts || [];
-                        const defaultContacts = [];
-                        if (!customData?.contacts) {
-                            if (f.contact?.phone) defaultContacts.push(`Phone: ${f.contact.phone}`);
-                            if (f.contact?.intake_phone) defaultContacts.push(`Intake: ${f.contact.intake_phone}`);
-                            if (f.contact?.hotline) defaultContacts.push(`Hotline: ${f.contact.hotline}`);
-                        }
                         const contactLines = customData?.contacts
-                            ? contacts.map(c => `${c.type}: ${c.info}${c.notes ? ` (${c.notes})` : ''}`)
-                            : defaultContacts;
-                        contactLines.forEach(c => parts.push(`  ${c}`));
+                            ? customData.contacts.map(c => `${c.type}: ${c.info}${c.notes ? ` (${c.notes})` : ''}`)
+                            : [
+                                f.contact?.phone        ? `Phone: ${f.contact.phone}`               : null,
+                                f.contact?.intake_phone ? `Intake: ${f.contact.intake_phone}`        : null,
+                                f.contact?.hotline      ? `Hotline: ${f.contact.hotline}`            : null,
+                              ].filter(Boolean);
+                        contactLines.forEach(c => rows.push(`  ${c}`));
                     }
                     if (fields.website && f.contact?.website && f.contact.website !== 'https://' && f.contact.website !== 'http://') {
-                        parts.push(`  Website: ${f.contact.website}`);
+                        rows.push(`  Website: ${f.contact.website}`);
                     }
                     const hours = customData?.hours || f.hours || '';
-                    if (fields.hours && hours) parts.push(`  Hours: ${hours}`);
+                    if (fields.hours && hours) rows.push(`  Hours: ${hours}`);
 
-                    const meds = customData?.medications || f.services?.medications || [];
-                    if (fields.medications && meds.length) parts.push(`  Pharmacotherapies: ${meds.join(', ')}`);
+                    const meds = customData?.medications || extractMedicationsFromFacility(f);
+                    if (fields.medications && meds.length) rows.push(`  Pharmacotherapies: ${meds.join(', ')}`);
 
                     const settings = customData?.service_settings || f.services?.service_settings || [];
-                    if (fields.service_settings && settings.length) parts.push(`  Service Settings: ${settings.join(', ')}`);
+                    if (fields.service_settings && settings.length) rows.push(`  Service Settings: ${settings.join(', ')}`);
 
                     const payments = customData?.payment_options || f.services?.payment_options || [];
-                    if (fields.payment_options && payments.length) parts.push(`  Payment Options: ${payments.join(', ')}`);
+                    if (fields.payment_options && payments.length) rows.push(`  Payment Options: ${payments.join(', ')}`);
 
                     const programs = customData?.special_programs || f.services?.special_programs || [];
-                    if (fields.special_programs && programs.length) parts.push(`  Special Programs: ${programs.join(', ')}`);
+                    if (fields.special_programs && programs.length) rows.push(`  Special Programs: ${programs.join(', ')}`);
 
-                    return `${i + 1}. ${parts.join('\n')}`;
+                    return rows.join('\n');
                 });
 
-                document.getElementById('generatedListText').value = lines.join('\n\n');
+                document.getElementById('generatedListText').innerHTML = blocks.join('\n\n');
                 document.getElementById('generateOutputSection').style.display = '';
                 document.getElementById('generatedListText').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             }
 
             function copyGeneratedList() {
-                const textarea = document.getElementById('generatedListText');
-                textarea.select();
-                navigator.clipboard.writeText(textarea.value).then(() => {
-                    const btn = event.target;
-                    const original = btn.textContent;
-                    btn.textContent = '✓ Copied!';
-                    setTimeout(() => btn.textContent = original, 2000);
-                });
+                const el = document.getElementById('generatedListText');
+                const selection = window.getSelection();
+                const range = document.createRange();
+                range.selectNodeContents(el);
+                selection.removeAllRanges();
+                selection.addRange(range);
+                document.execCommand('copy');
+                selection.removeAllRanges();
+                const btn = event.target;
+                const original = btn.textContent;
+                btn.textContent = '✓ Copied!';
+                setTimeout(() => btn.textContent = original, 2000);
             }
 
             function closeGenerateListModal() {
