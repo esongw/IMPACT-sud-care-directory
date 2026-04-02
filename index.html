@@ -2808,21 +2808,20 @@
                 return cityToCounty[city] || null;
             }
 
-            // Load data from JSON file
+            // Load facility data from Supabase
             async function loadFacilities() {
                 try {
-                    const response = await fetch("oregon_sud_facilities.json");
+                    const { data, error } = await _supabase
+                        .from('facilities')
+                        .select('*')
+                        .limit(1000);
+                    if (error) throw error;
 
-                    if (!response.ok) {
-                        throw new Error("Failed to load facilities data");
-                    }
-
-                    const data = await response.json();
-                    allFacilities = data.facilities || [];
+                    allFacilities = data || [];
 
                     // Add county to each facility
                     allFacilities.forEach((facility) => {
-                        facility.county = getCityCounty(facility.address.city);
+                        facility.county = getCityCounty(facility.address?.city);
                     });
 
                     // Load custom facilities from Supabase
@@ -2832,7 +2831,6 @@
                     }
 
                     filteredFacilities = allFacilities;
-
                     displayFacilities(filteredFacilities);
                     updateStats();
                 } catch (error) {
@@ -2840,7 +2838,6 @@
                     <div class="error">
                         <h3>⚠️ Error Loading Data</h3>
                         <p>${error.message}</p>
-                        <p>Make sure the JSON data file is in the same directory as this HTML file.</p>
                     </div>
                 `;
                 }

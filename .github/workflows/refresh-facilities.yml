@@ -20,17 +20,12 @@ jobs:
           python-version: '3.11'
 
       - name: Install dependencies
-        run: pip install requests urllib3
+        run: pip install requests urllib3 supabase
 
-      - name: Back up user-added custom facilities
-        run: |
-          # The JSON file contains only API-sourced facilities.
-          # User notes, custom facilities, and edits live in browser localStorage
-          # and are never touched by this workflow.
-          echo "oregon_sud_facilities.json will be refreshed from SAMHSA API."
-          echo "User localStorage data (notes, custom facilities, edits) is unaffected."
-
-      - name: Fetch latest facility data
+      - name: Fetch latest facility data and upload to Supabase
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: python fetch_oregon_facilities.py
 
       - name: Commit and push if data changed

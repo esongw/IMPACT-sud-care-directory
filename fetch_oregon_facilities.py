@@ -243,6 +243,43 @@ def fetch_washington_facilities() -> List[Dict[str, Any]]:
     
     return filtered_facilities
 
+def save_to_supabase(facilities: List[Dict[str, Any]]) -> None:
+    """
+    Upsert facilities to Supabase. Reads SUPABASE_URL and SUPABASE_ANON_KEY
+    from environment variables.
+    """
+    import os
+    from supabase import create_client
+
+    url = os.environ.get('SUPABASE_URL')
+    key = os.environ.get('SUPABASE_ANON_KEY')
+    if not url or not key:
+        print("SUPABASE_URL or SUPABASE_ANON_KEY not set — skipping Supabase upload.")
+        return
+
+    client = create_client(url, key)
+
+    records = [{
+        'id': str(f['id']),
+        'name': f['name'],
+        'name_secondary': f.get('name_secondary'),
+        'address': f.get('address'),
+        'contact': f.get('contact'),
+        'location': f.get('location'),
+        'facility_type': f.get('facility_type'),
+        'services': f.get('services'),
+        'updated_at': time.strftime('%Y-%m-%dT%H:%M:%SZ'),
+    } for f in facilities]
+
+    batch_size = 50
+    for i in range(0, len(records), batch_size):
+        batch = records[i:i + batch_size]
+        client.table('facilities').upsert(batch).execute()
+        print(f"  Supabase: uploaded {i + 1}–{min(i + batch_size, len(records))} of {len(records)}")
+
+    print(f"Supabase: {len(records)} facilities upserted.")
+
+
 def save_facilities(facilities: List[Dict[str, Any]], filename: str = "oregon_sud_facilities.json"):
     """
     Save facilities to a JSON file.
@@ -294,9 +331,10 @@ def main():
     print(f"Total Washington facilities: {len(washington_facilities)}")
     print(f"Total facilities retrieved: {len(all_facilities)}")
     
-    # Save to JSON
+    # Save to JSON and Supabase
     output_file = "oregon_sud_facilities.json"
     save_facilities(all_facilities, output_file)
+    save_to_supabase(all_facilities)
     
     # Print summary statistics
     print("\n=== SUMMARY ===")
