@@ -2713,27 +2713,19 @@
                 return cityToCounty[city] || null;
             }
 
-            // Load facility data from Supabase
+            // Load facility data from JSON file
             async function loadFacilities() {
                 try {
-                    const { data, error } = await _supabase
-                        .from('facilities')
-                        .select('*')
-                        .limit(1000);
-                    if (error) throw error;
+                    const response = await fetch('oregon_sud_facilities.json');
+                    if (!response.ok) throw new Error(`Failed to fetch: ${response.status}`);
+                    const data = await response.json();
 
-                    allFacilities = data || [];
+                    allFacilities = data.facilities || [];
 
                     // Add county to each facility
                     allFacilities.forEach((facility) => {
                         facility.county = getCityCounty(facility.address?.city);
                     });
-
-                    // Load custom facilities from Supabase
-                    const { data: customRows } = await _supabase.from('custom_facilities').select('data');
-                    if (customRows && customRows.length > 0) {
-                        allFacilities = allFacilities.concat(customRows.map(r => r.data));
-                    }
 
                     filteredFacilities = allFacilities;
                     displayFacilities(filteredFacilities);
