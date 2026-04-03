@@ -6,6 +6,8 @@
         <title>Oregon SUD Treatment Facilities</title>
         <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
         <style>
+            @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
+
             * {
                 margin: 0;
                 padding: 0;
@@ -13,7 +15,7 @@
             }
 
             body {
-                font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+                font-family: 'Manrope', sans-serif;
                 background: #f5f5dc;
                 min-height: 100vh;
                 padding: 20px;
@@ -74,10 +76,9 @@
                 font-weight: 600;
                 margin-bottom: 8px;
                 color: #4a4035;
-                font-size: 14px;
+                font-size: 16px;
                 display: block;
-                font-family:
-                    -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+                font-family: 'Manrope', sans-serif;
             }
 
             .search-box {
@@ -88,7 +89,7 @@
                 border-radius: 2px;
                 transition: all 0.3s;
                 background: #fefdfb;
-                font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+                font-family: 'Manrope', sans-serif;
             }
 
             .search-box:focus {
@@ -113,19 +114,18 @@
                 font-weight: 600;
                 margin-bottom: 5px;
                 color: #4a4035;
-                font-size: 14px;
-                font-family:
-                    -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+                font-size: 16px;
+                font-family: 'Manrope', sans-serif;
             }
 
             .filter-dropdown-button {
-                padding: 10px 15px;
+                padding: 12px 15px;
                 border: 1px solid #d4cfc4;
                 border-radius: 2px;
                 background: #fefdfb;
                 cursor: pointer;
-                font-size: 14px;
-                font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+                font-size: 16px;
+                font-family: 'Manrope', sans-serif;
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
@@ -180,7 +180,7 @@
                 font-size: 14px;
                 background: #fefdfb;
                 cursor: pointer;
-                font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+                font-family: 'Manrope', sans-serif;
             }
 
             .checkbox-group {
@@ -258,7 +258,7 @@
                 font-size: 14px;
                 font-weight: 600;
                 cursor: pointer;
-                font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+                font-family: 'Manrope', sans-serif;
                 transition: all 0.3s;
                 letter-spacing: 0.5px;
             }
@@ -297,8 +297,7 @@
             .stat-label {
                 color: #5a4f45;
                 font-size: 14px;
-                font-family:
-                    -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+                font-family: 'Manrope', sans-serif;
             }
 
             .facilities-list {
@@ -458,8 +457,7 @@
                 font-size: 12px;
                 font-weight: 600;
                 white-space: nowrap;
-                font-family:
-                    -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+                font-family: 'Manrope', sans-serif;
                 letter-spacing: 0.5px;
             }
 
@@ -496,8 +494,7 @@
                 color: #4a4035;
                 font-size: 14px;
                 margin-bottom: 5px;
-                font-family:
-                    -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+                font-family: 'Manrope', sans-serif;
                 letter-spacing: 0.5px;
             }
 
@@ -543,8 +540,7 @@
                 margin-bottom: 8px;
                 text-transform: uppercase;
                 letter-spacing: 1px;
-                font-family:
-                    -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+                font-family: 'Manrope', sans-serif;
             }
 
             .service-tags {
@@ -576,8 +572,7 @@
                 display: flex;
                 align-items: center;
                 gap: 8px;
-                font-family:
-                    -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+                font-family: 'Manrope', sans-serif;
             }
 
             .notes-textarea {
@@ -587,7 +582,7 @@
                 border: 1px solid #d4cfc4;
                 border-radius: 2px;
                 font-size: 14px;
-                font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+                font-family: 'Manrope', sans-serif;
                 resize: vertical;
                 transition: border-color 0.3s;
                 background: #fefdfb;
@@ -620,8 +615,7 @@
                 font-weight: 600;
                 color: #ffffff;
                 margin-right: 10px;
-                font-family:
-                    -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+                font-family: 'Manrope', sans-serif;
             }
 
             .btn {
@@ -635,8 +629,7 @@
                 display: inline-flex;
                 align-items: center;
                 gap: 8px;
-                font-family:
-                    -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+                font-family: 'Manrope', sans-serif;
                 letter-spacing: 0.5px;
             }
 
@@ -831,7 +824,7 @@
                 border: 2px solid #5b8fc4;
                 border-radius: 2px;
                 background: #fefdfb;
-                font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+                font-family: 'Manrope', sans-serif;
                 margin-bottom: 12px;
                 box-sizing: border-box;
             }
@@ -852,7 +845,7 @@
                 font-size: 15px;
                 font-weight: 600;
                 cursor: pointer;
-                font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+                font-family: 'Manrope', sans-serif;
                 letter-spacing: 0.5px;
                 transition: opacity 0.2s;
             }
@@ -877,7 +870,7 @@
                 font-size: 13px;
                 font-weight: 600;
                 cursor: pointer;
-                font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+                font-family: 'Manrope', sans-serif;
                 letter-spacing: 0.5px;
                 transition:
                     background 0.2s,
@@ -930,7 +923,7 @@
 
             <div class="controls">
                 <div class="search-section">
-                    <label for="searchBox">🔍 Search by Facility Name</label>
+                    <label for="searchBox">Search by Facility Name</label>
                     <input
                         type="text"
                         id="searchBox"
@@ -940,7 +933,7 @@
                 </div>
 
                 <div class="search-section">
-                    <label for="citySearchBox">🏙️ Search by City</label>
+                    <label for="citySearchBox">Search by City</label>
                     <input
                         type="text"
                         id="citySearchBox"
@@ -1233,28 +1226,28 @@
                     <div class="admin-only admin-hidden" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; padding-bottom: 14px; border-bottom: 1px solid #b8d4e8;">
                         <p style="font-size: 15px; color: #2d5170; margin: 0; font-weight: 600;">Is there a SUD care facility that needs to be added to this directory?</p>
                         <button class="btn btn-primary" onclick="showAddFacilityModal()" style="font-size: 14px; padding: 8px 18px; white-space: nowrap; margin-left: 16px; width: 200px;">
-                            ➕ Add Facility
+                            Add Facility
                         </button>
                     </div>
                     <div style="display: flex; justify-content: space-between; align-items: center;">
                         <p style="font-size: 15px; color: #2d5170; margin: 0; font-weight: 600;">Do you need facility information to add to your AVS?</p>
                         <button class="btn btn-secondary" onclick="showGenerateListModal()" style="font-size: 14px; padding: 8px 18px; white-space: nowrap; margin-left: 16px; width: 200px;">
-                            📋 Generate Facility List
+                            Generate Facility List
                         </button>
                     </div>
                 </div>
             </div>
 
             <div class="notes-management admin-only admin-hidden">
-                <span class="notes-management-title">📋 Notes Management:</span>
+                <span class="notes-management-title">Notes Management:</span>
                 <button class="btn btn-primary" onclick="showImportModal()">
-                    📥 Import Notes
+                    Import Notes
                 </button>
                 <button
                     class="btn btn-secondary"
                     onclick="exportNotesTemplate()"
                 >
-                    📤 Export Template
+                    Export Template
                 </button>
             </div>
 
@@ -1447,7 +1440,7 @@
 
                     <!-- Selected facilities panel -->
                     <div style="margin-bottom: 20px;">
-                        <h4 style="color: #4a7ba7; margin-bottom: 8px;">Selected Facilities <span id="generateSelectedCount" style="font-size: 13px; color: #6b5f54; font-weight: normal;"></span></h4>
+                        <h4 style="color: #2d2520; margin-bottom: 8px;">Selected Facilities <span id="generateSelectedCount" style="font-size: 13px; color: #2d2520; font-weight: normal;"></span></h4>
                         <div id="genSelectedPanel" style="max-height: 160px; overflow-y: auto; border: 1px solid #d4c9bc; border-radius: 4px; padding: 8px; background: #fefdfb;">
                             <p style="font-size: 13px; color: #6b5f54; font-style: italic;">No facilities selected yet.</p>
                         </div>
@@ -1457,9 +1450,9 @@
                     <div id="generateOutputSection" style="display: none;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                             <h4 style="color: #4a7ba7; margin: 0;">Generated List</h4>
-                            <button class="btn btn-primary" style="padding: 6px 14px; font-size: 13px;" onclick="copyGeneratedList()">📋 Copy to Clipboard</button>
+                            <button class="btn btn-primary" style="padding: 6px 14px; font-size: 13px;" onclick="copyGeneratedList()">Copy to Clipboard</button>
                         </div>
-                        <div id="generatedListText" contenteditable="true" style="min-height: 300px; width: 100%; box-sizing: border-box; border: 1px solid #d4c9bc; border-radius: 2px; padding: 10px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 14px; line-height: 1.6; background: #fefdfb; white-space: pre-wrap; overflow-y: auto;"></div>
+                        <div id="generatedListText" contenteditable="true" style="min-height: 300px; width: 100%; box-sizing: border-box; border: 1px solid #d4c9bc; border-radius: 2px; padding: 10px; font-family: 'Manrope', sans-serif; font-size: 14px; line-height: 1.6; background: #fefdfb; white-space: pre-wrap; overflow-y: auto;"></div>
                     </div>
 
                 </div>
