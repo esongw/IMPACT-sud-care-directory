@@ -64,8 +64,8 @@ function renderGenerateFacilityList(facilities) {
         ? '<p style="font-size: 13px; color: #6b5f54; font-style: italic; padding: 4px 0;">No facilities match the current filters.</p>'
         : facilities.map(f => `
             <label class="checkbox-label" style="display: flex; padding: 4px 0; border-bottom: 1px solid #f0ebe3;">
-                <input type="checkbox" class="gen-facility-cb" value="${f.id}" ${_genSelectedIds.has(String(f.id)) ? 'checked' : ''} style="margin-right: 8px;" onchange="_genSyncCheckbox(this)">
-                <span style="font-size: 13px;">${f.name}${f.name_secondary ? ` <em style="color:#6b5f54;">(${f.name_secondary})</em>` : ''}</span>
+                <input type="checkbox" class="gen-facility-cb" value="${f.id}" ${_genSelectedIds.has(String(f.id)) ? 'checked' : ''} style="margin-right: 8px; flex-shrink: 0;" onchange="_genSyncCheckbox(this)">
+                <span style="font-size: 13px;">${f.name}${f.name_secondary ? ` <em style="color:#6b5f54;">(${f.name_secondary})</em>` : ''}${(f.address?.city || f.address?.state) ? ` <span style="color:#8a7e74;">&mdash; ${[f.address?.city, f.address?.state].filter(Boolean).join(', ')}</span>` : ''}</span>
             </label>
         `).join('');
     _renderGenSelectedPanel();
