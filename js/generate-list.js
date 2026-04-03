@@ -79,8 +79,12 @@ function _genSyncCheckbox(cb) {
 
 // Apply modal-local filters and re-render the facility list
 function filterGenerateList() {
-    const nameTerm = document.getElementById('generateFacilitySearch').value.toLowerCase();
-    const cityTerm = document.getElementById('generateCitySearch').value.toLowerCase();
+    const nameRaw = document.getElementById('generateFacilitySearch').value.toLowerCase();
+    const cityRaw = document.getElementById('generateCitySearch').value.toLowerCase();
+
+    // Support comma-separated terms (OR logic)
+    const nameTerms = nameRaw.split(',').map(t => t.trim()).filter(Boolean);
+    const cityTerms = cityRaw.split(',').map(t => t.trim()).filter(Boolean);
 
     const selectedCounties = Array.from(
         document.querySelectorAll('.gen-county-filter:checked')
@@ -107,14 +111,18 @@ function filterGenerateList() {
     ).map(cb => cb.value.toLowerCase());
 
     const filtered = allFacilities.filter(f => {
-        // Name search
-        const matchesName = !nameTerm ||
-            f.name.toLowerCase().includes(nameTerm) ||
-            (f.name_secondary || '').toLowerCase().includes(nameTerm);
+        // Name search (any term matches)
+        const matchesName = nameTerms.length === 0 ||
+            nameTerms.some(term =>
+                f.name.toLowerCase().includes(term) ||
+                (f.name_secondary || '').toLowerCase().includes(term)
+            );
 
-        // City search
-        const matchesCity = !cityTerm ||
-            (f.address?.city || '').toLowerCase().includes(cityTerm);
+        // City search (any term matches)
+        const matchesCity = cityTerms.length === 0 ||
+            cityTerms.some(term =>
+                (f.address?.city || '').toLowerCase().includes(term)
+            );
 
         // County filter
         const matchesCounty = selectedCounties.length === 0 ||
@@ -372,7 +380,8 @@ function generateList() {
         return rows.join('\n');
     });
 
-    document.getElementById('generatedListText').innerHTML = blocks.join('\n\n');
+    const DIVIDER = '─'.repeat(48);
+    document.getElementById('generatedListText').innerHTML = blocks.join(`\n\n${DIVIDER}\n\n`);
     document.getElementById('generateOutputSection').style.display = '';
     document.getElementById('generatedListText').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }

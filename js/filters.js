@@ -249,22 +249,26 @@ function filterFacilities() {
         document.querySelectorAll(".service-filter:checked"),
     ).map((cb) => cb.value.toLowerCase());
 
-    filteredFacilities = allFacilities.filter((facility) => {
-        // Search by name or secondary name
-        const matchesSearch =
-            !searchTerm ||
-            facility.name.toLowerCase().includes(searchTerm) ||
-            (facility.name_secondary &&
-                facility.name_secondary
-                    .toLowerCase()
-                    .includes(searchTerm));
+    // Support comma-separated terms (OR logic)
+    const searchTerms = searchTerm.split(',').map(t => t.trim()).filter(Boolean);
+    const citySearchTerms = citySearchTerm.split(',').map(t => t.trim()).filter(Boolean);
 
-        // Search by city
+    filteredFacilities = allFacilities.filter((facility) => {
+        // Search by name or secondary name (any term matches)
+        const matchesSearch =
+            searchTerms.length === 0 ||
+            searchTerms.some(term =>
+                facility.name.toLowerCase().includes(term) ||
+                (facility.name_secondary &&
+                    facility.name_secondary.toLowerCase().includes(term))
+            );
+
+        // Search by city (any term matches)
         const matchesCitySearch =
-            !citySearchTerm ||
-            facility.address.city
-                .toLowerCase()
-                .includes(citySearchTerm);
+            citySearchTerms.length === 0 ||
+            citySearchTerms.some(term =>
+                facility.address.city.toLowerCase().includes(term)
+            );
 
         // Payment filter - if nothing selected, show all; if selected, must accept at least one of the selected payment types
         const matchesPayment =
