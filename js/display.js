@@ -117,12 +117,12 @@ function _attachDetailEventListeners(facilityId, cell) {
 function _renderHoursDisplay(hoursData) {
     if (!hoursData || hoursData.length === 0) return '';
     if (hoursData.length === 1 && !hoursData[0].description) {
-        return `<p style="margin: 5px 0; white-space: pre-line;">${hoursData[0].hours}</p>`;
+        return `<p style="margin: 5px 0; font-size: 14px; color: #2d2520; white-space: pre-line;">${hoursData[0].hours}</p>`;
     }
     return hoursData.map(row =>
         row.description
-            ? `<div style="margin: 4px 0;"><strong style="min-width: 120px; display: inline-block;">${row.description}:</strong> ${row.hours}</div>`
-            : `<div style="margin: 4px 0;">${row.hours}</div>`
+            ? `<div style="margin: 4px 0; font-size: 14px; color: #2d2520;"><strong style="min-width: 120px; display: inline-block;">${row.description}:</strong> ${row.hours}</div>`
+            : `<div style="margin: 4px 0; font-size: 14px; color: #2d2520;">${row.hours}</div>`
     ).join('');
 }
 
@@ -133,6 +133,7 @@ function createFacilityDetails(facility) {
     const customData = getFacilityCustomData(facility.id);
     const hoursData = parseHoursData(customData?.hours ?? facility.hours);
     const patientNotes = customData?.patient_notes || '';
+    const SH = 'font-weight: 600; font-size: 14px; color: #2d2520; margin-bottom: 8px;';
 
     return `
         <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 30px;">
@@ -140,38 +141,38 @@ function createFacilityDetails(facility) {
             <div>
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                     <h3 style="margin: 0; color: #2d2520;">${facility.name}</h3>
-                    ${isAdmin() ? `<button class="btn btn-secondary" style="padding: 6px 14px; font-size: 13px;" onclick="event.stopPropagation(); showEditFacilityModal('${facility.id}')">✏️ Edit</button>` : ""}
+                    ${isAdmin() ? `<button class="btn btn-secondary" style="padding: 6px 14px; font-size: 13px;" onclick="event.stopPropagation(); showEditFacilityModal('${facility.id}')">Edit</button>` : ""}
                 </div>
-                ${facility.name_secondary ? `<p style="color: #6b5f54; font-style: italic; margin-bottom: 15px;">${facility.name_secondary}</p>` : ""}
+                ${facility.name_secondary ? `<p style="color: #2d2520; font-style: italic; margin-bottom: 15px;">${facility.name_secondary}</p>` : ""}
 
                 <div style="margin-bottom: 20px;">
-                    <h4 style="color: #4a7ba7; margin-bottom: 10px; font-size: 16px;">📍 Address</h4>
-                    <p style="margin: 5px 0;">${facility.address.street1}</p>
-                    ${facility.address.street2 ? `<p style="margin: 5px 0;">${facility.address.street2}</p>` : ""}
-                    <p style="margin: 5px 0;">${facility.address.city}, ${facility.address.state} ${facility.address.zip}</p>
+                    <div style="${SH}">Address</div>
+                    <p style="margin: 5px 0; font-size: 14px; color: #2d2520;">${facility.address.street1}</p>
+                    ${facility.address.street2 ? `<p style="margin: 5px 0; font-size: 14px; color: #2d2520;">${facility.address.street2}</p>` : ""}
+                    <p style="margin: 5px 0; font-size: 14px; color: #2d2520;">${facility.address.city}, ${facility.address.state} ${facility.address.zip}</p>
                 </div>
 
                 ${hoursData.length > 0 ? `<div style="margin-bottom: 20px;">
-                    <h4 style="color: #4a7ba7; margin-bottom: 10px; font-size: 16px;">🕐 Hours of Operation</h4>
+                    <div style="${SH}">Hours of Operation</div>
                     ${_renderHoursDisplay(hoursData)}
                 </div>` : ""}
 
                 ${facility.contact.website && facility.contact.website !== "https://" && facility.contact.website !== "http://"
                     ? `<div style="margin-bottom: 20px;">
-                        <h4 style="color: #4a7ba7; margin-bottom: 10px; font-size: 16px;">🌐 Website</h4>
-                        <p style="margin: 5px 0;"><a href="${facility.contact.website}" target="_blank" class="facility-website-link">${facility.contact.website}</a></p>
+                        <div style="${SH}">Website</div>
+                        <p style="margin: 5px 0; font-size: 14px;"><a href="${facility.contact.website}" target="_blank" class="facility-website-link">${facility.contact.website}</a></p>
                     </div>`
                     : ""}
 
                 <!-- General Contacts -->
                 <div style="margin-bottom: 20px;">
-                    <h4 style="color: #4a7ba7; margin-bottom: 10px; font-size: 16px;">📞 Contact Information</h4>
+                    <div style="${SH}">Contact Information</div>
                     ${createContactTable(facility, customData, false)}
                 </div>
 
                 <!-- Patient Notes -->
                 <div class="notes-section" style="margin-bottom: 20px;">
-                    <div class="notes-title">🗒️ Patient-Facing Notes</div>
+                    <div class="notes-title">Patient-Facing Notes</div>
                     <textarea
                         id="patient-notes-${facility.id}"
                         class="notes-textarea"
@@ -186,7 +187,7 @@ function createFacilityDetails(facility) {
 
                 <!-- Clinical Staff Notes -->
                 <div class="notes-section" style="margin-bottom: 20px;">
-                    <div class="notes-title">🔒 Clinical Staff Notes</div>
+                    <div class="notes-title">Clinical Staff Notes</div>
                     <textarea
                         id="notes-${facility.id}"
                         class="notes-textarea"
@@ -201,24 +202,24 @@ function createFacilityDetails(facility) {
 
                 <!-- Documents -->
                 <div style="padding: 15px; background: #f0ebe3; border-radius: 4px;">
-                    <h4 style="margin-bottom: 10px; color: #2d2520; font-size: 16px;">📄 Facility Documents</h4>
+                    <div style="${SH}">Facility Documents</div>
                     <div id="documents-list-${facility.id}" style="margin-bottom: 10px;">
                         ${documents.length > 0
                             ? documents.map((doc) => `
                                 <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px; background: white; margin-bottom: 5px; border-radius: 2px;">
-                                    <span style="font-size: 14px; flex: 1;">${doc.name}</span>
+                                    <span style="font-size: 14px; color: #2d2520; flex: 1;">${doc.name}</span>
                                     <div style="display: flex; gap: 5px;">
-                                        <button class="btn btn-secondary" style="padding: 4px 12px; font-size: 12px;" onclick="event.stopPropagation(); downloadDocument('${facility.id}', '${doc.name.replace(/'/g, "\\'")}')">⬇ Download</button>
-                                        ${isAdmin() ? `<button class="btn btn-secondary" style="padding: 4px 12px; font-size: 12px; background: #a94842;" onclick="event.stopPropagation(); deleteDocument('${facility.id}', '${doc.name.replace(/'/g, "\\'")}')">🗑 Delete</button>` : ""}
+                                        <button class="btn btn-secondary" style="padding: 4px 12px; font-size: 12px;" onclick="event.stopPropagation(); downloadDocument('${facility.id}', '${doc.name.replace(/'/g, "\\'")}')">Download</button>
+                                        ${isAdmin() ? `<button class="btn btn-secondary" style="padding: 4px 12px; font-size: 12px; background: #a94842;" onclick="event.stopPropagation(); deleteDocument('${facility.id}', '${doc.name.replace(/'/g, "\\'")}')">Delete</button>` : ""}
                                     </div>
                                 </div>
                             `).join("")
-                            : '<p style="font-size: 14px; color: #6b5f54; font-style: italic;">No documents uploaded yet.</p>'
+                            : '<p style="font-size: 14px; color: #2d2520; font-style: italic;">No documents uploaded yet.</p>'
                         }
                     </div>
                     ${isAdmin() ? `
                     <label for="upload-doc-${facility.id}" class="btn btn-primary" style="display: inline-block; cursor: pointer; padding: 8px 16px; font-size: 14px;">
-                        📤 Upload Document
+                        Upload Document
                     </label>
                     <input type="file" id="upload-doc-${facility.id}" style="display: none;" onchange="handleDocumentUpload(event, '${facility.id}')">
                     ` : ""}
@@ -238,27 +239,35 @@ function _renderStaffContactsSection(facilityId, customData) {
     if (staffContacts.length === 0) return '';
 
     return `
-        <div style="margin-bottom: 20px; padding: 15px; background: #f0f0f8; border-radius: 4px; border-left: 3px solid #7b7bba;">
-            <h4 style="color: #4a4a8a; margin-bottom: 10px; font-size: 16px;">🔒 Contact Information for Staff</h4>
-            <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
-                <thead>
-                    <tr style="border-bottom: 2px solid #c4c4d4;">
-                        <th style="text-align: left; padding: 8px; font-weight: 600; color: #4a4035;">Type</th>
-                        <th style="text-align: left; padding: 8px; font-weight: 600; color: #4a4035;">Notes</th>
-                        <th style="text-align: left; padding: 8px; font-weight: 600; color: #4a4035;">Contact Info</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${staffContacts.map((c) => `
-                        <tr style="border-bottom: 1px solid #d4cfc4;">
-                            <td style="padding: 8px; vertical-align: top;">${c.type}</td>
-                            <td style="padding: 8px; vertical-align: top; color: #6b5f54;">${c.notes || "—"}</td>
-                            <td style="padding: 8px; vertical-align: top;">${c.info}</td>
-                        </tr>
-                    `).join("")}
-                </tbody>
-            </table>
+        <div style="margin-bottom: 20px;">
+            <div style="font-weight: 600; font-size: 14px; color: #2d2520; margin-bottom: 8px;">Contact Information for Staff</div>
+            ${_renderContactTableRows(staffContacts)}
         </div>
+    `;
+}
+
+function _renderContactTableRows(contacts) {
+    const TH = 'text-align: left; padding: 8px; font-weight: 600; color: #2d2520; background: transparent; font-size: 14px;';
+    const TD = 'padding: 8px; vertical-align: top; font-size: 14px; color: #2d2520;';
+    return `
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="border-bottom: 1px solid #d4cfc4;">
+                    <th style="${TH}">Type</th>
+                    <th style="${TH}">Notes</th>
+                    <th style="${TH}">Contact Info</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${contacts.map(c => `
+                    <tr style="border-bottom: 1px solid #ede8dd;">
+                        <td style="${TD}">${c.type}</td>
+                        <td style="${TD}">${c.notes || "—"}</td>
+                        <td style="${TD}">${c.info}</td>
+                    </tr>
+                `).join("")}
+            </tbody>
+        </table>
     `;
 }
 
@@ -274,29 +283,10 @@ function createContactTable(facility, customData, includeStaff) {
     }
 
     if (allContacts.length === 0) {
-        return '<p style="color: #6b5f54; font-style: italic;">No contact information available.</p>';
+        return '<p style="font-size: 14px; color: #2d2520; font-style: italic;">No contact information available.</p>';
     }
 
-    return `
-        <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
-            <thead>
-                <tr style="border-bottom: 2px solid #d4cfc4;">
-                    <th style="text-align: left; padding: 8px; font-weight: 600; color: #4a4035;">Type</th>
-                    <th style="text-align: left; padding: 8px; font-weight: 600; color: #4a4035;">Notes</th>
-                    <th style="text-align: left; padding: 8px; font-weight: 600; color: #4a4035;">Contact Info</th>
-                </tr>
-            </thead>
-            <tbody>
-                ${allContacts.map((contact) => `
-                    <tr style="border-bottom: 1px solid #ede8dd;">
-                        <td style="padding: 8px; vertical-align: top;">${contact.type}</td>
-                        <td style="padding: 8px; vertical-align: top; color: #6b5f54;">${contact.notes || "—"}</td>
-                        <td style="padding: 8px; vertical-align: top;">${contact.info}</td>
-                    </tr>
-                `).join("")}
-            </tbody>
-        </table>
-    `;
+    return _renderContactTableRows(allContacts);
 }
 
 function createCollapsibleServicesSection(facility) {
@@ -314,25 +304,25 @@ function createCollapsibleServicesSection(facility) {
     }
 
     if (medications.length > 0) {
-        html += createCollapsibleSection(facility.id, "pharmacotherapies", "💊 Pharmacotherapies Available",
+        html += createCollapsibleSection(facility.id, "pharmacotherapies", "Pharmacotherapies Available",
             medications.map((med) => `<span class="service-tag medication-tag">${med}</span>`).join(""));
     }
 
     const serviceSettings = customData?.service_settings || services?.service_settings || [];
     if (serviceSettings.length > 0) {
-        html += createCollapsibleSection(facility.id, "service-settings", "🏢 Service Settings",
+        html += createCollapsibleSection(facility.id, "service-settings", "Service Settings",
             serviceSettings.map((setting) => `<span class="service-tag">${setting}</span>`).join(""));
     }
 
     const specialPrograms = customData?.special_programs || services?.special_programs || [];
     if (specialPrograms.length > 0) {
-        html += createCollapsibleSection(facility.id, "special-programs", "⭐ Special Programs",
+        html += createCollapsibleSection(facility.id, "special-programs", "Special Programs",
             specialPrograms.map((program) => `<span class="service-tag">${program}</span>`).join(""));
     }
 
     const paymentOptions = customData?.payment_options || services?.payment_options || [];
     if (paymentOptions.length > 0) {
-        html += createCollapsibleSection(facility.id, "payment-options", "💳 Payment Options",
+        html += createCollapsibleSection(facility.id, "payment-options", "Payment Options",
             paymentOptions.map((payment) => `<span class="service-tag">${payment}</span>`).join(""));
     }
 
