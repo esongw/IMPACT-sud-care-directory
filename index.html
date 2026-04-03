@@ -1477,18 +1477,20 @@
                 <div class="modal-body">
                     <div class="import-instructions" id="importInstructions">
                         <h4>Import Format - CSV File</h4>
-                        <p>Upload a CSV file with these columns:</p>
-                        <p>
-                            <strong
-                                >ID, Facility Name, Street Address, City, State,
-                                Zip, Notes</strong
-                            >
+                        <p>Upload a CSV file exported from this tool. The following columns are supported:</p>
+                        <p style="margin-top: 8px;">
+                            <strong>ID, Name, Secondary Name, Street Address, City, State, County, Hours, General Contacts, Staff Contacts, Patient Notes, Clinical Staff Notes</strong>
+                        </p>
+                        <p style="margin-top: 10px; font-size: 13px; color: #4a4035;">
+                            <strong>Multi-entry fields</strong> (Hours &amp; Contacts) use this format:<br>
+                            &nbsp;• <strong>Hours:</strong> <code>Description|Hours ;; Description|Hours</code><br>
+                            &nbsp;&nbsp;&nbsp;Example: <code>Office Hours|Mon–Fri 9am–5pm ;; After Hours|Call 503-555-0000</code><br>
+                            &nbsp;&nbsp;&nbsp;(Leave description blank: <code>|Mon–Fri 9am–5pm</code>)<br>
+                            &nbsp;• <strong>Contacts:</strong> <code>Type|Info|Notes ;; Type|Info|Notes</code><br>
+                            &nbsp;&nbsp;&nbsp;Example: <code>Phone|503-555-1234| ;; Intake|503-555-5678|Call after 9am</code>
                         </p>
                         <p style="margin-top: 10px">
-                            <em
-                                >Note: Use the "Export Template" button to get a
-                                properly formatted CSV file.</em
-                            >
+                            <em>Tip: Use the "Export Template" button to get a pre-filled file in the correct format.</em>
                         </p>
                     </div>
                     <div style="margin: 20px 0" id="fileSelectSection">
