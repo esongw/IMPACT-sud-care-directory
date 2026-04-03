@@ -70,7 +70,9 @@ function showEditFacilityModal(facilityId) {
     const staffContacts = customData?.staff_contacts ?? [];
     renderEditStaffContacts(staffContacts);
 
-    document.getElementById("editFacilityModal").classList.add("show");
+    const modal = document.getElementById("editFacilityModal");
+    modal.classList.add("show");
+    modal.querySelector(".modal-content").scrollTop = 0;
 }
 
 function closeEditFacilityModal() {

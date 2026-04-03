@@ -24,7 +24,7 @@ function _icon(name, size = 14) {
 }
 
 function _sectionHeader(iconName, label) {
-    return `<div style="display:flex;align-items:center;gap:6px;font-weight:600;font-size:14px;color:#2d2520;margin-bottom:8px;">${_icon(iconName)} ${label}</div>`;
+    return `<div style="display:flex;align-items:center;gap:7px;font-weight:700;font-size:15px;color:#2d2520;margin-bottom:10px;">${_icon(iconName, 15)} ${label}</div>`;
 }
 
 // Display facilities
@@ -47,11 +47,9 @@ function displayFacilities(facilities) {
                 <tr>
                     <th onclick="sortFacilities('name')" style="cursor: pointer;">Name <span id="sort-name">↕</span></th>
                     <th onclick="sortFacilities('secondaryName')" style="cursor: pointer;">Secondary Name <span id="sort-secondaryName">↕</span></th>
-                    <th onclick="sortFacilities('county')" style="cursor: pointer;">County <span id="sort-county">↕</span></th>
                     <th>Street Address</th>
                     <th onclick="sortFacilities('city')" style="cursor: pointer;">City <span id="sort-city">↕</span></th>
                     <th>State</th>
-                    <th>Hours</th>
                     <th>Website</th>
                 </tr>
             </thead>
@@ -59,10 +57,7 @@ function displayFacilities(facilities) {
     `;
 
     facilities.forEach((facility) => {
-        const regionLabel = facility.county || "Unknown";
         const facilityId = `facility-${facility.id}`;
-        const hoursData = parseHoursData(getFacilityCustomData(facility.id)?.hours ?? facility.hours);
-        const hoursDisplay = hoursData.map(r => r.description ? `${r.description}: ${r.hours}` : r.hours).join('\n');
 
         html += `
             <tr onclick="toggleFacilityDetails('${facilityId}')">
@@ -71,11 +66,9 @@ function displayFacilities(facilities) {
                     ${facility.name}
                 </td>
                 <td style="color: #6b5f54; font-style: italic;">${facility.name_secondary || ""}</td>
-                <td>${regionLabel}</td>
                 <td>${facility.address.street1 || "N/A"}</td>
                 <td>${facility.address.city}</td>
                 <td>${facility.address.state}</td>
-                <td style="white-space: pre-line; font-size: 13px;">${hoursDisplay}</td>
                 <td>${
                     facility.contact.website &&
                     facility.contact.website !== "https://" &&
@@ -86,7 +79,7 @@ function displayFacilities(facilities) {
                 </td>
             </tr>
             <tr class="facility-details-row" id="${facilityId}" data-facility-id="${facility.id}">
-                <td colspan="8" class="facility-details-cell"></td>
+                <td colspan="6" class="facility-details-cell"></td>
             </tr>
         `;
     });
@@ -192,17 +185,17 @@ function createFacilityDetails(facility) {
                     <p style="margin: 5px 0; font-size: 14px; color: #2d2520;">${facility.address.city}, ${facility.address.state} ${facility.address.zip}</p>
                 </div>
 
-                ${hoursData.length > 0 ? `<div style="margin-bottom: 20px;">
-                    ${_sectionHeader('clock', 'Hours of Operation')}
-                    ${_renderHoursDisplay(hoursData)}
-                </div>` : ""}
-
                 ${facility.contact.website && facility.contact.website !== "https://" && facility.contact.website !== "http://"
                     ? `<div style="margin-bottom: 20px;">
                         ${_sectionHeader('globe', 'Website')}
                         <p style="margin: 5px 0; font-size: 14px;"><a href="${facility.contact.website}" target="_blank" class="facility-website-link">${facility.contact.website}</a></p>
                     </div>`
                     : ""}
+
+                ${hoursData.length > 0 ? `<div style="margin-bottom: 20px;">
+                    ${_sectionHeader('clock', 'Hours of Operation')}
+                    ${_renderHoursDisplay(hoursData)}
+                </div>` : ""}
 
                 <!-- General Contacts -->
                 <div style="margin-bottom: 20px;">
