@@ -157,6 +157,33 @@ function updateCountyFilter(countyCheckbox) {
     updateFilterCount('county');
 }
 
+// Toggle toolbar panels
+function toggleFiltersPanel() {
+    const panel = document.getElementById('filtersPanel');
+    const btn = document.getElementById('filtersBtn');
+    const open = panel.style.display !== 'none';
+    panel.style.display = open ? 'none' : '';
+    btn.classList.toggle('active', !open);
+}
+
+function toggleEditDirPanel() {
+    const panel = document.getElementById('editDirPanel');
+    const btn = document.getElementById('editDirBtn');
+    const open = panel.style.display !== 'none';
+    panel.style.display = open ? 'none' : '';
+    btn.classList.toggle('active', !open);
+}
+
+function _syncToolbarFilterBadge() {
+    const total = document.querySelectorAll(
+        '.county-filter:checked, .service-filter:checked, .medication-filter:checked, .payment-filter:checked'
+    ).length;
+    const badge = document.getElementById('toolbar-filter-count');
+    if (!badge) return;
+    badge.textContent = total;
+    badge.style.display = total > 0 ? 'inline-flex' : 'none';
+}
+
 // Update filter count badge
 function updateFilterCount(filterType) {
     const classMap = {
@@ -181,6 +208,7 @@ function updateFilterCount(filterType) {
         countBadge.style.display = "none";
     }
 
+    _syncToolbarFilterBadge();
     filterFacilities();
 }
 
@@ -223,6 +251,7 @@ function clearAllFilters() {
     });
 
     // Reset the filtered facilities
+    _syncToolbarFilterBadge();
     filterFacilities();
 }
 
