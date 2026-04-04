@@ -5,7 +5,7 @@ const GENERATE_FIELDS = [
     { id: 'phone',            label: 'Phone / Contact',    checked: true  },
     { id: 'website',          label: 'Website',            checked: true  },
     { id: 'hours',            label: 'Hours',              checked: false },
-    { id: 'patient_notes',    label: 'Patient Notes',      checked: false },
+    { id: 'patient_notes',    label: 'Information for Patients', checked: false },
     { id: 'service_settings', label: 'Service Settings',   checked: false },
     { id: 'payment_options',  label: 'Payment Options',    checked: false },
     { id: 'special_programs', label: 'Special Programs',   checked: false },
