@@ -1321,10 +1321,6 @@
                     <div>
                         <div style="font-weight: 700; font-size: 13px; color: #2d2520; margin-bottom: 6px;">Fields to Include</div>
                         <div id="generateFieldCheckboxes" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px 8px; margin-bottom: 10px;"></div>
-                        <div style="display: flex; justify-content: flex-end; gap: 8px; margin-bottom: 10px;">
-                            <button class="btn btn-primary" onclick="generateList()" style="padding: 6px 16px; font-size: 13px;">Generate</button>
-                            <button class="btn btn-secondary" onclick="clearAVSSelection()" style="padding: 6px 16px; font-size: 13px;">Clear Selection</button>
-                        </div>
                         <div id="generateOutputSection" style="display: none;">
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
                                 <span style="font-weight: 700; font-size: 13px; color: #2d2520;">Generated Output</span>
@@ -1333,12 +1329,16 @@
                             <div id="generatedListText" contenteditable="true" style="width: 100%; box-sizing: border-box; border: 1px solid #d4c9bc; border-radius: 2px; padding: 8px; font-family: 'Karla', sans-serif; font-size: 13px; line-height: 1.6; background: #fefdfb; white-space: pre-wrap; max-height: 320px; overflow-y: auto;"></div>
                         </div>
                     </div>
-                    <div>
+                    <div style="display: flex; flex-direction: column;">
                         <div style="font-weight: 700; font-size: 13px; color: #2d2520; margin-bottom: 6px;">
                             Selected Facilities <span id="generateSelectedCount" style="font-size: 12px; font-weight: normal; color: #6b5f54;"></span>
                         </div>
-                        <div id="genSelectedPanel" style="max-height: 220px; overflow-y: auto; border: 1px solid #d4c9bc; border-radius: 4px; padding: 6px; background: #fefdfb;">
+                        <div id="genSelectedPanel" style="flex: 1; overflow-y: auto; max-height: 220px; border: 1px solid #d4c9bc; border-radius: 4px; padding: 6px; background: #fefdfb; margin-bottom: 8px;">
                             <p style="font-size: 13px; color: #6b5f54; font-style: italic;">No facilities selected yet.</p>
+                        </div>
+                        <div style="display: flex; justify-content: flex-end; gap: 8px;">
+                            <button class="btn btn-primary" onclick="generateList()" style="padding: 6px 16px; font-size: 13px;">Generate</button>
+                            <button class="btn btn-secondary" onclick="clearAVSSelection()" style="padding: 6px 16px; font-size: 13px;">Clear Selection</button>
                         </div>
                     </div>
                 </div>
