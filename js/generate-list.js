@@ -1,16 +1,11 @@
 // Generate List Functions
 
 const GENERATE_FIELDS = [
-    { id: 'name',             label: 'Name',               checked: true  },
-    { id: 'name_secondary',   label: 'Secondary Name',     checked: false },
-    { id: 'facility_type',    label: 'Facility Type',      checked: false },
-    { id: 'county',           label: 'County',             checked: true  },
     { id: 'address',          label: 'Address',            checked: true  },
     { id: 'phone',            label: 'Phone / Contact',    checked: true  },
     { id: 'website',          label: 'Website',            checked: true  },
     { id: 'hours',            label: 'Hours',              checked: false },
     { id: 'patient_notes',    label: 'Patient Notes',      checked: false },
-    { id: 'medications',      label: 'Pharmacotherapies',  checked: false },
     { id: 'service_settings', label: 'Service Settings',   checked: false },
     { id: 'payment_options',  label: 'Payment Options',    checked: false },
     { id: 'special_programs', label: 'Special Programs',   checked: false },
@@ -94,8 +89,6 @@ function _genDeselect(facilityId) {
 }
 
 function generateList() {
-    const typeLabels = { SA: 'Substance Abuse', MH: 'Mental Health', BOTH: 'Both SA & MH' };
-
     const fields = {};
     GENERATE_FIELDS.forEach(f => {
         fields[f.id] = document.getElementById(`gen-field-${f.id}`)?.checked || false;
@@ -112,10 +105,8 @@ function generateList() {
         const customData = getFacilityCustomData(f.id);
         const rows = [];
 
-        if (fields.name) rows.push(`<strong>${i + 1}. ${f.name}</strong>`);
-        if (fields.name_secondary && f.name_secondary) rows.push(`  Also known as: ${f.name_secondary}`);
-        if (fields.facility_type && f.facility_type) rows.push(`  Type: ${typeLabels[f.facility_type] || f.facility_type}`);
-        if (fields.county && f.county) rows.push(`  County: ${f.county}`);
+        rows.push(`<strong>${i + 1}. ${f.name}</strong>`);
+        if (f.name_secondary) rows.push(`  Also known as: ${f.name_secondary}`);
         if (fields.address && f.address) {
             const a = f.address;
             rows.push(`  Address: ${a.street1}${a.street2 ? ', ' + a.street2 : ''}, ${a.city}, ${a.state} ${a.zip}`);
