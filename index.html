@@ -1002,8 +1002,8 @@
                 <button class="toolbar-btn" id="filtersBtn" onclick="toggleFiltersPanel()">
                     Filters <span id="toolbar-filter-count" class="toolbar-badge" style="display:none;"></span>
                 </button>
-                <button class="toolbar-btn" onclick="showGenerateListModal()">
-                    Generate List for AVS
+                <button class="toolbar-btn" id="avsPanelBtn" onclick="toggleAVSPanel()">
+                    Generate List for AVS <span id="avs-count-badge" class="toolbar-badge" style="display:none;"></span>
                 </button>
                 <button class="toolbar-btn admin-only admin-hidden" id="editDirBtn" onclick="toggleEditDirPanel()">
                     Edit Directory
@@ -1300,6 +1300,35 @@
                 </div>
             </div>
 
+            <!-- AVS Panel (collapsible) -->
+            <div id="avsPanel" class="toolbar-panel" style="display:none;">
+                <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px;">
+                    <div>
+                        <div style="font-weight: 700; font-size: 14px; color: #2d2520; margin-bottom: 10px;">Fields to Include</div>
+                        <div id="generateFieldCheckboxes" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 16px;"></div>
+                        <div style="display: flex; gap: 10px; margin-bottom: 16px;">
+                            <button class="btn btn-primary" onclick="generateList()">Generate</button>
+                            <button class="btn btn-secondary" onclick="clearAVSSelection()">Clear Selection</button>
+                        </div>
+                        <div id="generateOutputSection" style="display: none;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                <span style="font-weight: 700; font-size: 14px; color: #2d2520;">Generated Output</span>
+                                <button class="btn btn-primary" style="padding: 6px 14px; font-size: 13px;" onclick="copyGeneratedList()">Copy to Clipboard</button>
+                            </div>
+                            <div id="generatedListText" contenteditable="true" style="width: 100%; box-sizing: border-box; border: 1px solid #d4c9bc; border-radius: 2px; padding: 10px; font-family: 'Karla', sans-serif; font-size: 14px; line-height: 1.6; background: #fefdfb; white-space: pre-wrap; max-height: 400px; overflow-y: auto;"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div style="font-weight: 700; font-size: 14px; color: #2d2520; margin-bottom: 8px;">
+                            Selected Facilities <span id="generateSelectedCount" style="font-size: 13px; font-weight: normal; color: #6b5f54;"></span>
+                        </div>
+                        <div id="genSelectedPanel" style="max-height: 320px; overflow-y: auto; border: 1px solid #d4c9bc; border-radius: 4px; padding: 8px; background: #fefdfb;">
+                            <p style="font-size: 13px; color: #6b5f54; font-style: italic;">No facilities selected yet.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="stats">
                 <div class="stat">
                     <div class="stat-number" id="totalCount">0</div>
@@ -1315,199 +1344,6 @@
                 <div class="loading">
                     <h3>Loading facilities...</h3>
                     <p>Please wait while we fetch the data</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Generate List Modal -->
-        <div id="generateListModal" class="modal">
-            <div class="modal-content" style="max-width: 820px; max-height: 90vh; overflow-y: auto;">
-                <div class="modal-header">📋 Generate Facility List</div>
-                <div class="modal-body">
-
-                    <!-- Field selection -->
-                    <div style="margin-bottom: 20px;">
-                        <h4 style="color: #4a7ba7; margin-bottom: 12px;">Fields to Include</h4>
-                        <div id="generateFieldCheckboxes" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;"></div>
-                    </div>
-
-                    <!-- Facility filter + selection -->
-                    <div style="margin-bottom: 20px;">
-                        <h4 style="color: #4a7ba7; margin-bottom: 10px;">Filter &amp; Select Facilities</h4>
-
-                        <!-- Name / city search -->
-                        <div style="display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap;">
-                            <input type="text" id="generateFacilitySearch" class="search-box" style="flex: 1; min-width: 150px; padding: 6px 10px; font-size: 13px;" placeholder="Search by facility name..." oninput="filterGenerateList()">
-                            <input type="text" id="generateCitySearch" class="search-box" style="flex: 1; min-width: 150px; padding: 6px 10px; font-size: 13px;" placeholder="Search by city..." oninput="filterGenerateList()">
-                        </div>
-
-                        <!-- Facility type -->
-                        <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 8px; flex-wrap: wrap;">
-                            <span style="font-size: 13px; font-weight: 600; color: #4a4035;">Facility Type:</span>
-                            <label style="font-size: 13px; display: flex; align-items: center; gap: 4px; cursor: pointer;"><input type="checkbox" class="gen-type-filter" value="SA" onchange="updateGenFilterCount('type')"> Substance Abuse</label>
-                            <label style="font-size: 13px; display: flex; align-items: center; gap: 4px; cursor: pointer;"><input type="checkbox" class="gen-type-filter" value="MH" onchange="updateGenFilterCount('type')"> Mental Health</label>
-                            <label style="font-size: 13px; display: flex; align-items: center; gap: 4px; cursor: pointer;"><input type="checkbox" class="gen-type-filter" value="BOTH" onchange="updateGenFilterCount('type')"> Both SA &amp; MH</label>
-                            <span id="gen-type-count" class="filter-count gen-filter-count" style="display: none;">0</span>
-                        </div>
-
-                        <!-- Dropdown filters -->
-                        <div style="display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; align-items: flex-start;">
-
-                            <!-- County -->
-                            <div class="filter-group" style="min-width: 130px; flex: 1;">
-                                <div class="filter-dropdown-button" onclick="toggleGenFilterDropdown(this)" style="padding: 6px 10px; font-size: 13px;">
-                                    <span>County <span id="gen-county-count" class="filter-count gen-filter-count" style="display:none;">0</span></span>
-                                    <span class="filter-dropdown-arrow">▼</span>
-                                </div>
-                                <div class="filter-dropdown-content" style="z-index: 200;">
-                                    <div class="checkbox-group">
-                                        <div class="gen-county-group">
-                                            <label class="checkbox-label county-group-header"><input type="checkbox" class="gen-county-group-checkbox" onchange="toggleGenCountyGroup(this)"><span>Metro Portland</span></label>
-                                            <label class="checkbox-label county-subitem"><input type="checkbox" class="gen-county-filter" value="Clackamas, OR" onchange="updateGenCountyFilter(this)"><span>Clackamas</span></label>
-                                            <label class="checkbox-label county-subitem"><input type="checkbox" class="gen-county-filter" value="Columbia, OR" onchange="updateGenCountyFilter(this)"><span>Columbia</span></label>
-                                            <label class="checkbox-label county-subitem"><input type="checkbox" class="gen-county-filter" value="Multnomah, OR" onchange="updateGenCountyFilter(this)"><span>Multnomah</span></label>
-                                            <label class="checkbox-label county-subitem"><input type="checkbox" class="gen-county-filter" value="Washington, OR" onchange="updateGenCountyFilter(this)"><span>Washington</span></label>
-                                        </div>
-                                        <div class="gen-county-group">
-                                            <label class="checkbox-label county-group-header"><input type="checkbox" class="gen-county-group-checkbox" onchange="toggleGenCountyGroup(this)"><span>Willamette Valley</span></label>
-                                            <label class="checkbox-label county-subitem"><input type="checkbox" class="gen-county-filter" value="Benton, OR" onchange="updateGenCountyFilter(this)"><span>Benton</span></label>
-                                            <label class="checkbox-label county-subitem"><input type="checkbox" class="gen-county-filter" value="Lane, OR" onchange="updateGenCountyFilter(this)"><span>Lane</span></label>
-                                            <label class="checkbox-label county-subitem"><input type="checkbox" class="gen-county-filter" value="Linn, OR" onchange="updateGenCountyFilter(this)"><span>Linn</span></label>
-                                            <label class="checkbox-label county-subitem"><input type="checkbox" class="gen-county-filter" value="Marion, OR" onchange="updateGenCountyFilter(this)"><span>Marion</span></label>
-                                            <label class="checkbox-label county-subitem"><input type="checkbox" class="gen-county-filter" value="Polk, OR" onchange="updateGenCountyFilter(this)"><span>Polk</span></label>
-                                            <label class="checkbox-label county-subitem"><input type="checkbox" class="gen-county-filter" value="Yamhill, OR" onchange="updateGenCountyFilter(this)"><span>Yamhill</span></label>
-                                        </div>
-                                        <div class="gen-county-group">
-                                            <label class="checkbox-label county-group-header"><input type="checkbox" class="gen-county-group-checkbox" onchange="toggleGenCountyGroup(this)"><span>Oregon Coast</span></label>
-                                            <label class="checkbox-label county-subitem"><input type="checkbox" class="gen-county-filter" value="Clatsop, OR" onchange="updateGenCountyFilter(this)"><span>Clatsop</span></label>
-                                            <label class="checkbox-label county-subitem"><input type="checkbox" class="gen-county-filter" value="Coos, OR" onchange="updateGenCountyFilter(this)"><span>Coos</span></label>
-                                            <label class="checkbox-label county-subitem"><input type="checkbox" class="gen-county-filter" value="Lincoln, OR" onchange="updateGenCountyFilter(this)"><span>Lincoln</span></label>
-                                            <label class="checkbox-label county-subitem"><input type="checkbox" class="gen-county-filter" value="Tillamook, OR" onchange="updateGenCountyFilter(this)"><span>Tillamook</span></label>
-                                        </div>
-                                        <div class="gen-county-group">
-                                            <label class="checkbox-label county-group-header"><input type="checkbox" class="gen-county-group-checkbox" onchange="toggleGenCountyGroup(this)"><span>Southern Oregon</span></label>
-                                            <label class="checkbox-label county-subitem"><input type="checkbox" class="gen-county-filter" value="Douglas, OR" onchange="updateGenCountyFilter(this)"><span>Douglas</span></label>
-                                            <label class="checkbox-label county-subitem"><input type="checkbox" class="gen-county-filter" value="Jackson, OR" onchange="updateGenCountyFilter(this)"><span>Jackson</span></label>
-                                            <label class="checkbox-label county-subitem"><input type="checkbox" class="gen-county-filter" value="Josephine, OR" onchange="updateGenCountyFilter(this)"><span>Josephine</span></label>
-                                            <label class="checkbox-label county-subitem"><input type="checkbox" class="gen-county-filter" value="Klamath, OR" onchange="updateGenCountyFilter(this)"><span>Klamath</span></label>
-                                        </div>
-                                        <div class="gen-county-group">
-                                            <label class="checkbox-label county-group-header"><input type="checkbox" class="gen-county-group-checkbox" onchange="toggleGenCountyGroup(this)"><span>Central Oregon</span></label>
-                                            <label class="checkbox-label county-subitem"><input type="checkbox" class="gen-county-filter" value="Crook, OR" onchange="updateGenCountyFilter(this)"><span>Crook</span></label>
-                                            <label class="checkbox-label county-subitem"><input type="checkbox" class="gen-county-filter" value="Deschutes, OR" onchange="updateGenCountyFilter(this)"><span>Deschutes</span></label>
-                                            <label class="checkbox-label county-subitem"><input type="checkbox" class="gen-county-filter" value="Jefferson, OR" onchange="updateGenCountyFilter(this)"><span>Jefferson</span></label>
-                                        </div>
-                                        <div class="gen-county-group">
-                                            <label class="checkbox-label county-group-header"><input type="checkbox" class="gen-county-group-checkbox" onchange="toggleGenCountyGroup(this)"><span>Eastern Oregon</span></label>
-                                            <label class="checkbox-label county-subitem"><input type="checkbox" class="gen-county-filter" value="Gilliam, OR" onchange="updateGenCountyFilter(this)"><span>Gilliam</span></label>
-                                            <label class="checkbox-label county-subitem"><input type="checkbox" class="gen-county-filter" value="Grant, OR" onchange="updateGenCountyFilter(this)"><span>Grant</span></label>
-                                            <label class="checkbox-label county-subitem"><input type="checkbox" class="gen-county-filter" value="Harney, OR" onchange="updateGenCountyFilter(this)"><span>Harney</span></label>
-                                            <label class="checkbox-label county-subitem"><input type="checkbox" class="gen-county-filter" value="Hood River, OR" onchange="updateGenCountyFilter(this)"><span>Hood River</span></label>
-                                            <label class="checkbox-label county-subitem"><input type="checkbox" class="gen-county-filter" value="Lake, OR" onchange="updateGenCountyFilter(this)"><span>Lake</span></label>
-                                            <label class="checkbox-label county-subitem"><input type="checkbox" class="gen-county-filter" value="Malheur, OR" onchange="updateGenCountyFilter(this)"><span>Malheur</span></label>
-                                            <label class="checkbox-label county-subitem"><input type="checkbox" class="gen-county-filter" value="Morrow, OR" onchange="updateGenCountyFilter(this)"><span>Morrow</span></label>
-                                            <label class="checkbox-label county-subitem"><input type="checkbox" class="gen-county-filter" value="Umatilla, OR" onchange="updateGenCountyFilter(this)"><span>Umatilla</span></label>
-                                            <label class="checkbox-label county-subitem"><input type="checkbox" class="gen-county-filter" value="Union, OR" onchange="updateGenCountyFilter(this)"><span>Union</span></label>
-                                            <label class="checkbox-label county-subitem"><input type="checkbox" class="gen-county-filter" value="Wallowa, OR" onchange="updateGenCountyFilter(this)"><span>Wallowa</span></label>
-                                            <label class="checkbox-label county-subitem"><input type="checkbox" class="gen-county-filter" value="Wasco, OR" onchange="updateGenCountyFilter(this)"><span>Wasco</span></label>
-                                            <label class="checkbox-label county-subitem"><input type="checkbox" class="gen-county-filter" value="Wheeler, OR" onchange="updateGenCountyFilter(this)"><span>Wheeler</span></label>
-                                        </div>
-                                        <div class="gen-county-group">
-                                            <label class="checkbox-label county-group-header"><input type="checkbox" class="gen-county-group-checkbox" onchange="toggleGenCountyGroup(this)"><span>Washington State</span></label>
-                                            <label class="checkbox-label county-subitem"><input type="checkbox" class="gen-county-filter" value="Benton, WA" onchange="updateGenCountyFilter(this)"><span>Benton</span></label>
-                                            <label class="checkbox-label county-subitem"><input type="checkbox" class="gen-county-filter" value="Clark, WA" onchange="updateGenCountyFilter(this)"><span>Clark</span></label>
-                                            <label class="checkbox-label county-subitem"><input type="checkbox" class="gen-county-filter" value="Cowlitz, WA" onchange="updateGenCountyFilter(this)"><span>Cowlitz</span></label>
-                                            <label class="checkbox-label county-subitem"><input type="checkbox" class="gen-county-filter" value="Franklin, WA" onchange="updateGenCountyFilter(this)"><span>Franklin</span></label>
-                                            <label class="checkbox-label county-subitem"><input type="checkbox" class="gen-county-filter" value="Grays Harbor, WA" onchange="updateGenCountyFilter(this)"><span>Grays Harbor</span></label>
-                                            <label class="checkbox-label county-subitem"><input type="checkbox" class="gen-county-filter" value="Lewis, WA" onchange="updateGenCountyFilter(this)"><span>Lewis</span></label>
-                                            <label class="checkbox-label county-subitem"><input type="checkbox" class="gen-county-filter" value="Pacific, WA" onchange="updateGenCountyFilter(this)"><span>Pacific</span></label>
-                                            <label class="checkbox-label county-subitem"><input type="checkbox" class="gen-county-filter" value="Spokane, WA" onchange="updateGenCountyFilter(this)"><span>Spokane</span></label>
-                                            <label class="checkbox-label county-subitem"><input type="checkbox" class="gen-county-filter" value="Thurston, WA" onchange="updateGenCountyFilter(this)"><span>Thurston</span></label>
-                                            <label class="checkbox-label county-subitem"><input type="checkbox" class="gen-county-filter" value="Walla Walla, WA" onchange="updateGenCountyFilter(this)"><span>Walla Walla</span></label>
-                                            <label class="checkbox-label county-subitem"><input type="checkbox" class="gen-county-filter" value="Yakima, WA" onchange="updateGenCountyFilter(this)"><span>Yakima</span></label>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Level of Service -->
-                            <div class="filter-group" style="min-width: 130px; flex: 1;">
-                                <div class="filter-dropdown-button" onclick="toggleGenFilterDropdown(this)" style="padding: 6px 10px; font-size: 13px;">
-                                    <span>Level of Service <span id="gen-service-count" class="filter-count gen-filter-count" style="display:none;">0</span></span>
-                                    <span class="filter-dropdown-arrow">▼</span>
-                                </div>
-                                <div class="filter-dropdown-content">
-                                    <div class="checkbox-group">
-                                        <label class="checkbox-label"><input type="checkbox" class="gen-service-filter" value="outpatient" onchange="updateGenFilterCount('service')"><span>Outpatient</span></label>
-                                        <label class="checkbox-label"><input type="checkbox" class="gen-service-filter" value="intensive outpatient" onchange="updateGenFilterCount('service')"><span>Intensive Outpatient</span></label>
-                                        <label class="checkbox-label"><input type="checkbox" class="gen-service-filter" value="residential" onchange="updateGenFilterCount('service')"><span>Residential</span></label>
-                                        <label class="checkbox-label"><input type="checkbox" class="gen-service-filter" value="inpatient" onchange="updateGenFilterCount('service')"><span>Inpatient</span></label>
-                                        <label class="checkbox-label"><input type="checkbox" class="gen-service-filter" value="detoxification" onchange="updateGenFilterCount('service')"><span>Detoxification</span></label>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Pharmacotherapies -->
-                            <div class="filter-group" style="min-width: 130px; flex: 1;">
-                                <div class="filter-dropdown-button" onclick="toggleGenFilterDropdown(this)" style="padding: 6px 10px; font-size: 13px;">
-                                    <span>Pharmacotherapies <span id="gen-medication-count" class="filter-count gen-filter-count" style="display:none;">0</span></span>
-                                    <span class="filter-dropdown-arrow">▼</span>
-                                </div>
-                                <div class="filter-dropdown-content">
-                                    <div class="checkbox-group">
-                                        <label class="checkbox-label"><input type="checkbox" class="gen-med-filter" value="buprenorphine" onchange="updateGenFilterCount('medication')"><span>Buprenorphine</span></label>
-                                        <label class="checkbox-label"><input type="checkbox" class="gen-med-filter" value="methadone" onchange="updateGenFilterCount('medication')"><span>Methadone</span></label>
-                                        <label class="checkbox-label"><input type="checkbox" class="gen-med-filter" value="naltrexone" onchange="updateGenFilterCount('medication')"><span>Naltrexone</span></label>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Payment Accepted -->
-                            <div class="filter-group" style="min-width: 130px; flex: 1;">
-                                <div class="filter-dropdown-button" onclick="toggleGenFilterDropdown(this)" style="padding: 6px 10px; font-size: 13px;">
-                                    <span>Payment Accepted <span id="gen-payment-count" class="filter-count gen-filter-count" style="display:none;">0</span></span>
-                                    <span class="filter-dropdown-arrow">▼</span>
-                                </div>
-                                <div class="filter-dropdown-content">
-                                    <div class="checkbox-group">
-                                        <label class="checkbox-label"><input type="checkbox" class="gen-payment-filter" value="medicaid" onchange="updateGenFilterCount('payment')"><span>Medicaid</span></label>
-                                        <label class="checkbox-label"><input type="checkbox" class="gen-payment-filter" value="medicare" onchange="updateGenFilterCount('payment')"><span>Medicare</span></label>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Clear filters + Select All/Deselect All -->
-                        <div style="display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; align-items: center;">
-                            <button class="btn btn-secondary" style="padding: 5px 12px; font-size: 13px; background: #6b5f54;" onclick="clearGenerateFilters()">Clear Filters</button>
-                            <button class="btn btn-secondary" style="padding: 5px 12px; font-size: 13px;" onclick="setAllGenerateFacilities(true)">Select All Shown</button>
-                            <button class="btn btn-secondary" style="padding: 5px 12px; font-size: 13px;" onclick="setAllGenerateFacilities(false)">Deselect All Shown</button>
-                        </div>
-
-                        <div id="generateFacilityList" style="max-height: 220px; overflow-y: auto; border: 1px solid #d4c9bc; border-radius: 4px; padding: 8px;"></div>
-                    </div>
-
-                    <!-- Selected facilities panel -->
-                    <div style="margin-bottom: 20px;">
-                        <h4 style="color: #2d2520; margin-bottom: 8px;">Selected Facilities <span id="generateSelectedCount" style="font-size: 13px; color: #2d2520; font-weight: normal;"></span></h4>
-                        <div id="genSelectedPanel" style="max-height: 160px; overflow-y: auto; border: 1px solid #d4c9bc; border-radius: 4px; padding: 8px; background: #fefdfb;">
-                            <p style="font-size: 13px; color: #6b5f54; font-style: italic;">No facilities selected yet.</p>
-                        </div>
-                    </div>
-
-                    <!-- Output -->
-                    <div id="generateOutputSection" style="display: none;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                            <h4 style="color: #4a7ba7; margin: 0;">Generated List</h4>
-                            <button class="btn btn-primary" style="padding: 6px 14px; font-size: 13px;" onclick="copyGeneratedList()">Copy to Clipboard</button>
-                        </div>
-                        <div id="generatedListText" contenteditable="true" style="min-height: 300px; width: 100%; box-sizing: border-box; border: 1px solid #d4c9bc; border-radius: 2px; padding: 10px; font-family: 'Karla', sans-serif; font-size: 14px; line-height: 1.6; background: #fefdfb; white-space: pre-wrap; overflow-y: auto;"></div>
-                    </div>
-
-                </div>
-                <div class="modal-footer">
-                    <button class="btn btn-secondary" onclick="closeGenerateListModal()">Close</button>
-                    <button class="btn btn-primary" onclick="generateList()">Generate List</button>
                 </div>
             </div>
         </div>

@@ -45,6 +45,7 @@ function displayFacilities(facilities) {
         <table class="facilities-table">
             <thead>
                 <tr>
+                    <th style="width: 36px; padding: 6px 8px;"></th>
                     <th onclick="sortFacilities('name')" style="cursor: pointer;">Name <span id="sort-name">↕</span></th>
                     <th onclick="sortFacilities('secondaryName')" style="cursor: pointer;">Secondary Name <span id="sort-secondaryName">↕</span></th>
                     <th>Street Address</th>
@@ -61,9 +62,17 @@ function displayFacilities(facilities) {
 
         html += `
             <tr onclick="toggleFacilityDetails('${facilityId}')">
+                <td style="text-align: center; padding: 6px 8px;" onclick="event.stopPropagation()">
+                    <input type="checkbox" class="avs-facility-cb" value="${facility.id}"
+                        ${(typeof _genSelectedIds !== 'undefined' && _genSelectedIds.has(String(facility.id))) ? 'checked' : ''}
+                        onchange="_avsToggle(this)"
+                        style="cursor: pointer; width: 15px; height: 15px;">
+                </td>
                 <td class="facility-name-cell">
-                    <span class="expand-icon" id="icon-${facilityId}">▶</span>
-                    ${facility.name}
+                    <div style="display: flex; align-items: flex-start; gap: 6px;">
+                        <span class="expand-icon" id="icon-${facilityId}" style="flex-shrink: 0; margin-top: 1px;">▶</span>
+                        <span>${facility.name}</span>
+                    </div>
                 </td>
                 <td style="color: #6b5f54; font-style: italic;">${facility.name_secondary || ""}</td>
                 <td>${facility.address.street1 || "N/A"}</td>
@@ -79,7 +88,7 @@ function displayFacilities(facilities) {
                 </td>
             </tr>
             <tr class="facility-details-row" id="${facilityId}" data-facility-id="${facility.id}">
-                <td colspan="6" class="facility-details-cell"></td>
+                <td colspan="7" class="facility-details-cell"></td>
             </tr>
         `;
     });

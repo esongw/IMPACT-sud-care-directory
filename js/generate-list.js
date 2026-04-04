@@ -16,283 +16,68 @@ const GENERATE_FIELDS = [
     { id: 'special_programs', label: 'Special Programs',   checked: false },
 ];
 
-// Modal-local filter state
-let _genCurrentFacilities = []; // current filtered list shown in modal
-let _genSelectedIds = new Set(); // persists across filter changes within one modal session
+let _genSelectedIds = new Set();
 
-function showGenerateListModal() {
-    // Render field checkboxes
-    document.getElementById('generateFieldCheckboxes').innerHTML = GENERATE_FIELDS.map(f => `
+// Toggle the AVS panel from the toolbar
+function toggleAVSPanel() {
+    const panel = document.getElementById('avsPanel');
+    const btn = document.getElementById('avsPanelBtn');
+    const open = panel.style.display !== 'none';
+    panel.style.display = open ? 'none' : '';
+    btn.classList.toggle('active', !open);
+    if (!open) {
+        _initAVSFields();
+        _renderGenSelectedPanel();
+    }
+}
+
+// Initialize field checkboxes once
+function _initAVSFields() {
+    const container = document.getElementById('generateFieldCheckboxes');
+    if (!container || container.dataset.initialized) return;
+    container.innerHTML = GENERATE_FIELDS.map(f => `
         <label class="checkbox-label">
             <input type="checkbox" id="gen-field-${f.id}" ${f.checked ? 'checked' : ''}>
             <span>${f.label}</span>
         </label>
     `).join('');
-
-    // Reset search/filter inputs
-    document.getElementById('generateFacilitySearch').value = '';
-    document.getElementById('generateCitySearch').value = '';
-
-    // Reset filter checkboxes inside the modal
-    document.querySelectorAll('.gen-county-filter, .gen-type-filter, .gen-service-filter, .gen-med-filter, .gen-payment-filter, .gen-special-filter').forEach(cb => {
-        cb.checked = false;
-    });
-    document.querySelectorAll('.gen-county-group-checkbox').forEach(cb => {
-        cb.checked = false;
-        cb.indeterminate = false;
-    });
-
-    // Reset filter count badges inside modal
-    document.querySelectorAll('.gen-filter-count').forEach(badge => {
-        badge.style.display = 'none';
-    });
-
-    // Reset selection for a fresh session
-    _genSelectedIds = new Set();
-
-    // Start from all facilities (independent of main page filters)
-    _genCurrentFacilities = allFacilities.slice();
-    renderGenerateFacilityList(_genCurrentFacilities);
-
-    document.getElementById('generateOutputSection').style.display = 'none';
-    document.getElementById('generateListModal').classList.add('show');
+    container.dataset.initialized = '1';
 }
 
-function renderGenerateFacilityList(facilities) {
-    _genCurrentFacilities = facilities;
-    document.getElementById('generateFacilityList').innerHTML = facilities.length === 0
-        ? '<p style="font-size: 13px; color: #6b5f54; font-style: italic; padding: 4px 0;">No facilities match the current filters.</p>'
-        : facilities.map(f => `
-            <label class="checkbox-label" style="display: flex; padding: 4px 0; border-bottom: 1px solid #f0ebe3;">
-                <input type="checkbox" class="gen-facility-cb" value="${f.id}" ${_genSelectedIds.has(String(f.id)) ? 'checked' : ''} style="margin-right: 8px; flex-shrink: 0;" onchange="_genSyncCheckbox(this)">
-                <span style="font-size: 13px;">${f.name}${f.name_secondary ? ` <em style="color:#6b5f54;">(${f.name_secondary})</em>` : ''}${(f.address?.city || f.address?.state) ? ` <span style="color:#8a7e74;">&mdash; ${[f.address?.city, f.address?.state].filter(Boolean).join(', ')}</span>` : ''}</span>
-            </label>
-        `).join('');
-    _renderGenSelectedPanel();
-}
-
-function _genSyncCheckbox(cb) {
+// Called from main table checkbox
+function _avsToggle(cb) {
     if (cb.checked) _genSelectedIds.add(String(cb.value));
     else _genSelectedIds.delete(String(cb.value));
     _renderGenSelectedPanel();
 }
 
-// Apply modal-local filters and re-render the facility list
-function filterGenerateList() {
-    const nameRaw = document.getElementById('generateFacilitySearch').value.toLowerCase();
-    const cityRaw = document.getElementById('generateCitySearch').value.toLowerCase();
-
-    // Support comma-separated terms (OR logic)
-    const nameTerms = nameRaw.split(',').map(t => t.trim()).filter(Boolean);
-    const cityTerms = cityRaw.split(',').map(t => t.trim()).filter(Boolean);
-
-    const selectedCounties = Array.from(
-        document.querySelectorAll('.gen-county-filter:checked')
-    ).map(cb => cb.value);
-
-    const selectedTypes = Array.from(
-        document.querySelectorAll('.gen-type-filter:checked')
-    ).map(cb => cb.value.toUpperCase());
-
-    const selectedServices = Array.from(
-        document.querySelectorAll('.gen-service-filter:checked')
-    ).map(cb => cb.value.toLowerCase());
-
-    const selectedMeds = Array.from(
-        document.querySelectorAll('.gen-med-filter:checked')
-    ).map(cb => cb.value.toLowerCase());
-
-    const selectedPayments = Array.from(
-        document.querySelectorAll('.gen-payment-filter:checked')
-    ).map(cb => cb.value.toLowerCase());
-
-    const selectedSpecial = Array.from(
-        document.querySelectorAll('.gen-special-filter:checked')
-    ).map(cb => cb.value.toLowerCase());
-
-    const filtered = allFacilities.filter(f => {
-        // Name search (any term matches)
-        const matchesName = nameTerms.length === 0 ||
-            nameTerms.some(term =>
-                f.name.toLowerCase().includes(term) ||
-                (f.name_secondary || '').toLowerCase().includes(term)
-            );
-
-        // City search (any term matches)
-        const matchesCity = cityTerms.length === 0 ||
-            cityTerms.some(term =>
-                (f.address?.city || '').toLowerCase().includes(term)
-            );
-
-        // County filter
-        const matchesCounty = selectedCounties.length === 0 ||
-            selectedCounties.includes(f.county);
-
-        // Facility type filter
-        const matchesType = selectedTypes.length === 0 ||
-            selectedTypes.includes((f.facility_type || '').toUpperCase());
-
-        // Level of service filter
-        const matchesService = selectedServices.length === 0 ||
-            selectedServices.some(levelFilter =>
-                f.services?.service_settings?.some(s =>
-                    s.toLowerCase().includes(levelFilter)
-                )
-            );
-
-        // Pharmacotherapy filter
-        const matchesMed = selectedMeds.length === 0 ||
-            selectedMeds.some(medFilter =>
-                f.services?.other_services?.some(s =>
-                    (s.code === 'OM' || s.code === 'PHR') &&
-                    s.values?.some(v => v.toLowerCase().includes(medFilter))
-                )
-            );
-
-        // Payment options filter
-        const matchesPayment = selectedPayments.length === 0 ||
-            selectedPayments.some(payFilter =>
-                f.services?.payment_options?.some(p =>
-                    p.toLowerCase().includes(payFilter)
-                )
-            );
-
-        // Special programs filter
-        const matchesSpecial = selectedSpecial.length === 0 ||
-            selectedSpecial.some(spFilter =>
-                f.services?.special_programs?.some(sp =>
-                    sp.toLowerCase().includes(spFilter)
-                )
-            );
-
-        return matchesName && matchesCity && matchesCounty && matchesType &&
-               matchesService && matchesMed && matchesPayment && matchesSpecial;
-    });
-
-    renderGenerateFacilityList(filtered);
+function _syncAVSBadge() {
+    const badge = document.getElementById('avs-count-badge');
+    if (!badge) return;
+    const count = _genSelectedIds.size;
+    badge.textContent = count;
+    badge.style.display = count > 0 ? 'inline-flex' : 'none';
 }
 
-// Toggle a county group's checkboxes in the modal
-function toggleGenCountyGroup(groupCheckbox) {
-    const group = groupCheckbox.closest('.gen-county-group');
-    group.querySelectorAll('.gen-county-filter').forEach(cb => {
-        cb.checked = groupCheckbox.checked;
-    });
-    updateGenFilterCount('county');
-}
-
-// Sync group header checkbox state for modal county filters
-function updateGenCountyFilter(countyCheckbox) {
-    const group = countyCheckbox.closest('.gen-county-group');
-    if (group) {
-        const groupCheckbox = group.querySelector('.gen-county-group-checkbox');
-        const countyCheckboxes = group.querySelectorAll('.gen-county-filter');
-        const checkedCount = Array.from(countyCheckboxes).filter(cb => cb.checked).length;
-        if (checkedCount === 0) {
-            groupCheckbox.checked = false;
-            groupCheckbox.indeterminate = false;
-        } else if (checkedCount === countyCheckboxes.length) {
-            groupCheckbox.checked = true;
-            groupCheckbox.indeterminate = false;
-        } else {
-            groupCheckbox.indeterminate = true;
-        }
-    }
-    updateGenFilterCount('county');
-}
-
-// Update a filter count badge in the modal and re-filter
-function updateGenFilterCount(filterType) {
-    const classMap = {
-        county:      'gen-county-filter',
-        type:        'gen-type-filter',
-        service:     'gen-service-filter',
-        medication:  'gen-med-filter',
-        payment:     'gen-payment-filter',
-        special:     'gen-special-filter',
-    };
-
-    const checkedCount = document.querySelectorAll(
-        `.${classMap[filterType]}:checked`
-    ).length;
-    const badge = document.getElementById(`gen-${filterType}-count`);
-    if (badge) {
-        badge.textContent = checkedCount;
-        badge.style.display = checkedCount > 0 ? 'inline-block' : 'none';
-    }
-
-    filterGenerateList();
-}
-
-// Toggle a filter dropdown inside the modal (scoped to avoid conflicting with main page)
-function toggleGenFilterDropdown(button) {
-    const content = button.nextElementSibling;
-    const isOpen = content.classList.contains('show');
-
-    // Close all modal dropdowns
-    document.querySelectorAll('#generateListModal .filter-dropdown-content').forEach(d => {
-        d.classList.remove('show');
-    });
-    document.querySelectorAll('#generateListModal .filter-dropdown-button').forEach(b => {
-        b.classList.remove('active');
-    });
-
-    if (!isOpen) {
-        content.classList.add('show');
-        button.classList.add('active');
-    }
-}
-
-// Clear all modal filters
-function clearGenerateFilters() {
-    document.getElementById('generateFacilitySearch').value = '';
-    document.getElementById('generateCitySearch').value = '';
-
-    document.querySelectorAll('.gen-county-filter, .gen-type-filter, .gen-service-filter, .gen-med-filter, .gen-payment-filter, .gen-special-filter').forEach(cb => {
-        cb.checked = false;
-    });
-    document.querySelectorAll('.gen-county-group-checkbox').forEach(cb => {
-        cb.checked = false;
-        cb.indeterminate = false;
-    });
-    document.querySelectorAll('.gen-filter-count').forEach(badge => {
-        badge.style.display = 'none';
-    });
-
-    // Close any open modal dropdowns
-    document.querySelectorAll('#generateListModal .filter-dropdown-content').forEach(d => {
-        d.classList.remove('show');
-    });
-    document.querySelectorAll('#generateListModal .filter-dropdown-button').forEach(b => {
-        b.classList.remove('active');
-    });
-
-    renderGenerateFacilityList(allFacilities.slice());
-}
-
-function setAllGenerateFacilities(checked) {
-    document.querySelectorAll('.gen-facility-cb').forEach(cb => {
-        cb.checked = checked;
-        if (checked) _genSelectedIds.add(String(cb.value));
-        else _genSelectedIds.delete(String(cb.value));
-    });
+function clearAVSSelection() {
+    _genSelectedIds.clear();
+    document.querySelectorAll('.avs-facility-cb').forEach(cb => cb.checked = false);
     _renderGenSelectedPanel();
-}
-
-function updateGenerateSelectedCount() {
-    const visible = document.querySelectorAll('.gen-facility-cb').length;
-    document.getElementById('generateSelectedCount').textContent =
-        `— ${_genSelectedIds.size} selected (${visible} shown in list)`;
+    document.getElementById('generateOutputSection').style.display = 'none';
 }
 
 function _renderGenSelectedPanel() {
-    updateGenerateSelectedCount();
+    _syncAVSBadge();
     const panel = document.getElementById('genSelectedPanel');
+    const countEl = document.getElementById('generateSelectedCount');
+    if (!panel) return;
     if (_genSelectedIds.size === 0) {
-        panel.innerHTML = '<p style="font-size: 13px; color: #6b5f54; font-style: italic;">No facilities selected yet.</p>';
+        panel.innerHTML = '<p style="font-size: 13px; color: #6b5f54; font-style: italic;">No facilities selected yet. Check boxes in the facility list below.</p>';
+        if (countEl) countEl.textContent = '';
         return;
     }
     const selectedFacilities = allFacilities.filter(f => _genSelectedIds.has(String(f.id)));
+    if (countEl) countEl.textContent = `— ${selectedFacilities.length} selected`;
     panel.innerHTML = selectedFacilities.map(f => `
         <div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 6px; margin-bottom: 3px; background: #edf3f9; border-radius: 3px; font-size: 13px;">
             <span>${f.name}${f.address?.city ? ` <span style="color: #6b5f54;">(${f.address.city})</span>` : ''}</span>
@@ -303,8 +88,7 @@ function _renderGenSelectedPanel() {
 
 function _genDeselect(facilityId) {
     _genSelectedIds.delete(String(facilityId));
-    // Uncheck the checkbox in the list if it's visible
-    const cb = document.querySelector(`.gen-facility-cb[value="${facilityId}"]`);
+    const cb = document.querySelector(`.avs-facility-cb[value="${facilityId}"]`);
     if (cb) cb.checked = false;
     _renderGenSelectedPanel();
 }
@@ -312,23 +96,15 @@ function _genDeselect(facilityId) {
 function generateList() {
     const typeLabels = { SA: 'Substance Abuse', MH: 'Mental Health', BOTH: 'Both SA & MH' };
 
-    // Which fields are checked
     const fields = {};
     GENERATE_FIELDS.forEach(f => {
         fields[f.id] = document.getElementById(`gen-field-${f.id}`)?.checked || false;
     });
 
-    // Sync any visible checkbox changes that happened without onchange firing
-    document.querySelectorAll('.gen-facility-cb').forEach(cb => {
-        if (cb.checked) _genSelectedIds.add(String(cb.value));
-        else _genSelectedIds.delete(String(cb.value));
-    });
-
-    // Build list from all facilities matching selected IDs (persists across filter changes)
     const selected = allFacilities.filter(f => _genSelectedIds.has(String(f.id)));
 
     if (selected.length === 0) {
-        alert('Please select at least one facility.');
+        alert('Please select at least one facility using the checkboxes in the list below.');
         return;
     }
 
@@ -348,9 +124,9 @@ function generateList() {
             const contactLines = customData?.contacts
                 ? customData.contacts.map(c => `${c.type}: ${c.info}${c.notes ? ` (${c.notes})` : ''}`)
                 : [
-                    f.contact?.phone        ? `Phone: ${f.contact.phone}`               : null,
-                    f.contact?.intake_phone ? `Intake: ${f.contact.intake_phone}`        : null,
-                    f.contact?.hotline      ? `Hotline: ${f.contact.hotline}`            : null,
+                    f.contact?.phone        ? `Phone: ${f.contact.phone}`        : null,
+                    f.contact?.intake_phone ? `Intake: ${f.contact.intake_phone}` : null,
+                    f.contact?.hotline      ? `Hotline: ${f.contact.hotline}`     : null,
                   ].filter(Boolean);
             contactLines.forEach(c => rows.push(`  ${c}`));
         }
@@ -361,19 +137,14 @@ function generateList() {
         if (fields.hours && hoursData.length > 0) {
             hoursData.forEach(r => rows.push(`  ${r.description ? r.description + ': ' : 'Hours: '}${r.hours}`));
         }
-
         const patientNotes = customData?.patient_notes || '';
         if (fields.patient_notes && patientNotes) rows.push(`  Notes: ${patientNotes}`);
-
         const meds = customData?.medications || extractMedicationsFromFacility(f);
         if (fields.medications && meds.length) rows.push(`  Pharmacotherapies: ${meds.join(', ')}`);
-
         const settings = customData?.service_settings || f.services?.service_settings || [];
         if (fields.service_settings && settings.length) rows.push(`  Service Settings: ${settings.join(', ')}`);
-
         const payments = customData?.payment_options || f.services?.payment_options || [];
         if (fields.payment_options && payments.length) rows.push(`  Payment Options: ${payments.join(', ')}`);
-
         const programs = customData?.special_programs || f.services?.special_programs || [];
         if (fields.special_programs && programs.length) rows.push(`  Special Programs: ${programs.join(', ')}`);
 
@@ -399,8 +170,4 @@ function copyGeneratedList() {
     const original = btn.textContent;
     btn.textContent = '✓ Copied!';
     setTimeout(() => btn.textContent = original, 2000);
-}
-
-function closeGenerateListModal() {
-    document.getElementById('generateListModal').classList.remove('show');
 }
